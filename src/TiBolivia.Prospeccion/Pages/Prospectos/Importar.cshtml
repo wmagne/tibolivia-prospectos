@@ -1,0 +1,23 @@
+@page
+@model TiBolivia.Prospeccion.Pages.Prospectos.ImportarModel
+@{ ViewData["Title"] = "Importar prospectos"; }
+<h3>Importar prospectos desde CSV</h3>
+<div class="card p-4">
+    <p>El archivo debe tener encabezados (separador coma o punto y coma):</p>
+    <code class="mb-2">@ImportarModel.Encabezados</code>
+    <p class="small text-muted">Solo <b>Empresa</b> y <b>Email</b> o <b>Telefono</b> son obligatorios. Los teléfonos bolivianos de 8 dígitos reciben el prefijo 591.
+        Los duplicados (mismo correo o teléfono) se omiten. <b>ConsentimientoWhatsApp</b> = "si" solo si la persona aceptó recibir WhatsApp.</p>
+    <p><a asp-page-handler="Plantilla">Descargar plantilla CSV</a></p>
+    <form method="post" enctype="multipart/form-data">
+        <div class="row g-3">
+            <div class="col-md-5"><input asp-for="Archivo" type="file" accept=".csv,text/csv" class="form-control" /></div>
+            <div class="col-md-3"><input asp-for="Origen" class="form-control" placeholder="Origen (ej. Lista ferias 2026)" /></div>
+            <div class="col-md-2 form-check pt-2"><input asp-for="AsignarmeAMi" class="form-check-input" /><label asp-for="AsignarmeAMi" class="form-check-label">Asignármelos</label></div>
+            <div class="col-md-2"><button class="btn btn-primary w-100">Importar</button></div>
+        </div>
+    </form>
+    @if (Model.Errores.Count > 0)
+    {
+        <div class="alert alert-warning mt-3 small"><ul class="mb-0">@foreach (var e in Model.Errores.Take(100)) { <li>@e</li> }</ul></div>
+    }
+</div>

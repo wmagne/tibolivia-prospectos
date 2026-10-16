@@ -1,0 +1,55 @@
+@page "{id:int?}"
+@using TiBolivia.Prospeccion.Services
+@model TiBolivia.Prospeccion.Pages.Plantillas.EditarModel
+@{ ViewData["Title"] = Model.Datos.Id == 0 ? "Nueva plantilla" : Model.Datos.Nombre; }
+<h3>@ViewData["Title"]</h3>
+<div class="row g-3">
+<div class="col-lg-7">
+<form method="post" class="card p-4">
+    <input type="hidden" asp-for="Datos.Id" />
+    <div class="row g-3">
+        <div class="col-md-8"><label class="form-label">Nombre</label><input asp-for="Datos.Nombre" class="form-control" /><span asp-validation-for="Datos.Nombre" class="text-danger small"></span></div>
+        <div class="col-md-4"><label class="form-label">Canal</label><select asp-for="Datos.Canal" asp-items="Html.GetEnumSelectList<Canal>()" class="form-select" id="canal"></select></div>
+        <div class="col-12 solo-email"><label class="form-label">Asunto</label><input asp-for="Datos.Asunto" class="form-control" /><span asp-validation-for="Datos.Asunto" class="text-danger small"></span></div>
+        <div class="col-12"><label class="form-label">Cuerpo <span class="solo-email small text-muted">(HTML)</span><span class="solo-whatsapp small text-muted">(texto; se usa como referencia y como mensaje libre dentro de la ventana de 24 h)</span></label>
+            <textarea asp-for="Datos.Cuerpo" class="form-control font-monospace" rows="12"></textarea><span asp-validation-for="Datos.Cuerpo" class="text-danger small"></span></div>
+        <div class="col-md-5 solo-whatsapp"><label class="form-label">Nombre de plantilla aprobada en Meta</label><input asp-for="Datos.WhatsAppPlantillaMeta" class="form-control" placeholder="seguimiento_propuesta" /></div>
+        <div class="col-md-2 solo-whatsapp"><label class="form-label">Idioma</label><input asp-for="Datos.WhatsAppIdioma" class="form-control" /></div>
+        <div class="col-md-5 solo-whatsapp"><label class="form-label">Parámetros {{1}}, {{2}}...</label><input asp-for="Datos.WhatsAppParametros" class="form-control" placeholder="{{Nombre}},{{Empresa}}" /></div>
+    </div>
+    <div class="mt-4 d-flex gap-2">
+        <button class="btn btn-primary">Guardar</button>
+        <button class="btn btn-outline-secondary" asp-page-handler="VistaPrevia">Vista previa</button>
+        <a asp-page="Index" class="btn btn-link">Cancelar</a>
+    </div>
+</form>
+</div>
+<div class="col-lg-5">
+    <div class="card p-3 mb-3">
+        <h6>Variables disponibles</h6>
+        <div class="small">@foreach (var v in RenderizadorPlantillas.Variables) { <code class="me-2">{{@v}}</code> }</div>
+        <p class="small text-muted mt-2 mb-0 solo-whatsapp">WhatsApp exige plantillas aprobadas por Meta para el primer contacto. Créela en WhatsApp Manager
+            con el mismo nombre y use {{1}}, {{2}}... en el texto; aquí indique qué variable va en cada posición.</p>
+    </div>
+    @if (Model.VistaPrevia is not null)
+    {
+        <div class="card p-3">
+            <h6>Vista previa (prospecto de ejemplo)</h6>
+            @if (!string.IsNullOrEmpty(Model.VistaPreviaAsunto)) { <div class="small"><b>Asunto:</b> @Model.VistaPreviaAsunto</div><hr /> }
+            @if (Model.Datos.Canal == Canal.Email) { <div class="mensaje-cuerpo">@Html.Raw(Model.VistaPrevia)</div> }
+            else { <div style="white-space:pre-wrap">@Model.VistaPrevia</div> }
+        </div>
+    }
+</div>
+</div>
+@section Scripts {
+<script>
+    const canal = document.getElementById('canal');
+    function actualizar() {
+        const email = canal.options[canal.selectedIndex].text === 'Email';
+        document.querySelectorAll('.solo-email').forEach(e => e.style.display = email ? '' : 'none');
+        document.querySelectorAll('.solo-whatsapp').forEach(e => e.style.display = email ? 'none' : '');
+    }
+    canal.addEventListener('change', actualizar); actualizar();
+</script>
+}

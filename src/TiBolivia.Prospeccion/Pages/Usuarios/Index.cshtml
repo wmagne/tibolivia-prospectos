@@ -1,0 +1,31 @@
+@page
+@model TiBolivia.Prospeccion.Pages.Usuarios.IndexModel
+@{ ViewData["Title"] = "Usuarios"; }
+<h3>Usuarios del área comercial</h3>
+<div class="row g-3">
+    <div class="col-lg-7"><div class="card p-3">
+        <table class="table table-sm mb-0">
+            <thead><tr><th>Nombre</th><th>Correo</th><th>Teléfono</th><th>Rol</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var (u, esAdmin) in Model.Lista)
+            {
+                <tr><td>@u.NombreCompleto</td><td>@u.Email</td><td>@u.PhoneNumber</td><td>@(esAdmin ? "Administrador" : "Comercial")</td>
+                    <td>@(u.Activo ? "Activo" : "Inactivo")</td>
+                    <td><form method="post" asp-page-handler="Activo" asp-route-id="@u.Id"><button class="btn btn-sm btn-link">@(u.Activo ? "Desactivar" : "Activar")</button></form></td></tr>
+            }
+            </tbody>
+        </table>
+    </div></div>
+    <div class="col-lg-5">
+        <form method="post" class="card p-3">
+            <h6>Nuevo usuario</h6>
+            <div asp-validation-summary="All" class="text-danger small"></div>
+            <div class="mb-2"><label class="form-label">Nombre completo (aparece como {{Comercial}})</label><input asp-for="NombreCompleto" class="form-control" /></div>
+            <div class="mb-2"><label class="form-label">Correo (las respuestas a los correos llegan aquí)</label><input asp-for="Email" class="form-control" /></div>
+            <div class="mb-2"><label class="form-label">Teléfono</label><input asp-for="Telefono" class="form-control" /></div>
+            <div class="mb-2"><label class="form-label">Contraseña inicial</label><input asp-for="Password" type="password" class="form-control" /></div>
+            <div class="form-check mb-3"><input asp-for="EsAdmin" class="form-check-input" /><label asp-for="EsAdmin" class="form-check-label">Administrador (configura campañas y plantillas)</label></div>
+            <button class="btn btn-primary">Crear</button>
+        </form>
+    </div>
+</div>

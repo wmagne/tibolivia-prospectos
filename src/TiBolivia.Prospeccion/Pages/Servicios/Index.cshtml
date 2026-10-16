@@ -1,0 +1,31 @@
+@page
+@model TiBolivia.Prospeccion.Pages.Servicios.IndexModel
+@{ ViewData["Title"] = "Servicios"; }
+<h3>Servicios de TI Bolivia</h3>
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card p-3">
+        <table class="table table-sm mb-0">
+            <thead><tr><th>Servicio</th><th>Descripción</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var s in Model.Servicios)
+            {
+                <tr><td>@s.Nombre</td><td class="small">@s.Descripcion</td><td>@(s.Activo ? "Activo" : "Inactivo")</td>
+                    <td><a asp-route-editar="@s.Id">Editar</a></td></tr>
+            }
+            </tbody>
+        </table>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <form method="post" class="card p-3">
+            <h6>@(Model.Datos.Id == 0 ? "Nuevo servicio" : "Editar servicio")</h6>
+            <input type="hidden" asp-for="Datos.Id" />
+            <div class="mb-2"><label class="form-label">Nombre</label><input asp-for="Datos.Nombre" class="form-control" /></div>
+            <div class="mb-2"><label class="form-label">Descripción (se usa en {{DescripcionServicio}})</label><textarea asp-for="Datos.Descripcion" class="form-control" rows="3"></textarea></div>
+            <div class="mb-2"><label class="form-label">URL de información</label><input asp-for="Datos.UrlInformacion" class="form-control" /></div>
+            <div class="form-check mb-3"><input asp-for="Datos.Activo" class="form-check-input" /><label asp-for="Datos.Activo" class="form-check-label">Activo</label></div>
+            <button class="btn btn-primary">Guardar</button>
+        </form>
+    </div>
+</div>

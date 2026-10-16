@@ -1,0 +1,18 @@
+@page "/baja/{token:guid}"
+@model TiBolivia.Prospeccion.Pages.BajaModel
+@{ ViewData["Title"] = "Darse de baja"; }
+<div class="row justify-content-center mt-5"><div class="col-md-6"><div class="card p-4 text-center">
+@if (Model.Prospecto is null)
+{
+    <p>El enlace no es válido.</p>
+}
+else if (Model.Confirmado)
+{
+    <h4>Listo</h4><p>No le enviaremos más correos de TI Bolivia. Disculpe las molestias.</p>
+}
+else
+{
+    <h4>¿Desea dejar de recibir nuestros correos?</h4>
+    <form method="post"><button class="btn btn-danger mt-3">Sí, darme de baja</button></form>
+}
+</div></div></div>

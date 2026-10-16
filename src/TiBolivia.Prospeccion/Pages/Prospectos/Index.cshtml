@@ -1,0 +1,85 @@
+@page
+@model TiBolivia.Prospeccion.Pages.Prospectos.IndexModel
+@{ ViewData["Title"] = "Prospectos"; }
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Prospectos <small class="text-muted fs-6">(@Model.Total)</small></h3>
+    <div>
+        <a asp-page="Importar" class="btn btn-outline-primary">Importar CSV</a>
+        <a asp-page="Editar" class="btn btn-primary">Nuevo prospecto</a>
+    </div>
+</div>
+
+<form method="get" class="card p-3 mb-3">
+    <div class="row g-2">
+        <div class="col-md-3"><input asp-for="Buscar" class="form-control" placeholder="Empresa, contacto, correo o teléfono" /></div>
+        <div class="col-md-2">
+            <select asp-for="Estado" asp-items="Html.GetEnumSelectList<EstadoProspecto>()" class="form-select"><option value="">Todos los estados</option></select>
+        </div>
+        <div class="col-md-2"><input asp-for="Ciudad" class="form-control" placeholder="Ciudad" /></div>
+        <div class="col-md-2"><input asp-for="Rubro" class="form-control" placeholder="Rubro" /></div>
+        <div class="col-md-2">
+            <select asp-for="AsignadoA" asp-items="Model.Usuarios" class="form-select">
+                <option value="">Cualquier comercial</option><option value="-">Sin asignar</option>
+            </select>
+        </div>
+        <div class="col-md-1"><button class="btn btn-secondary w-100">Filtrar</button></div>
+    </div>
+    <div class="form-check mt-2"><input asp-for="Mios" class="form-check-input" onchange="this.form.submit()" /><label class="form-check-label" asp-for="Mios">Solo mis prospectos</label></div>
+</form>
+
+<form method="post" id="formLote">
+    <input type="hidden" name="Buscar" value="@Model.Buscar" />
+    <input type="hidden" name="Estado" value="@Model.Estado" />
+    <div class="card p-3">
+        <div class="row g-2 mb-2">
+            <div class="col-md-4 d-flex gap-2">
+                <select name="campanaId" asp-items="Model.Campanas" class="form-select"></select>
+                <button class="btn btn-success text-nowrap" asp-page-handler="Inscribir">Inscribir en campaña</button>
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+                <select name="usuarioId" asp-items="Model.Usuarios" class="form-select"><option value="">(sin asignar)</option></select>
+                <button class="btn btn-outline-secondary text-nowrap" asp-page-handler="Asignar">Asignar a</button>
+            </div>
+        </div>
+        <div class="table-responsive">
+        <table class="table table-hover table-sm mb-0">
+            <thead><tr>
+                <th><input type="checkbox" class="form-check-input" onclick="document.querySelectorAll('input[name=seleccion]').forEach(c => c.checked = this.checked)" /></th>
+                <th>Empresa</th><th>Contacto</th><th>Correo</th><th>WhatsApp</th><th>Ciudad</th><th>Rubro</th><th>Estado</th><th>Comercial</th>
+            </tr></thead>
+            <tbody>
+            @foreach (var p in Model.Prospectos)
+            {
+                <tr>
+                    <td><input type="checkbox" class="form-check-input" name="seleccion" value="@p.Id" /></td>
+                    <td><a asp-page="Detalle" asp-route-id="@p.Id">@p.Empresa</a></td>
+                    <td>@p.NombreContacto <span class="text-muted small">@p.Cargo</span></td>
+                    <td>@p.Email @if (p.BajaEmail) { <span class="badge bg-dark">baja</span> }</td>
+                    <td>@p.Telefono
+                        @if (p.BajaWhatsApp) { <span class="badge bg-dark">baja</span> }
+                        else if (!p.ConsentimientoWhatsApp && p.Telefono != null) { <span class="badge bg-light text-dark" title="Sin consentimiento de WhatsApp">sin opt-in</span> }
+                    </td>
+                    <td>@p.Ciudad</td>
+                    <td>@p.Rubro</td>
+                    <td><span class="badge bg-@Etiquetas.Color(p.Estado)">@Etiquetas.Texto(p.Estado)</span></td>
+                    <td>@(p.AsignadoA?.NombreCompleto ?? "—")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+        </div>
+    </div>
+</form>
+
+@if (Model.TotalPaginas > 1)
+{
+    <nav class="mt-3"><ul class="pagination">
+    @for (var i = 1; i <= Model.TotalPaginas; i++)
+    {
+        <li class="page-item @(i == Model.Pagina ? "active" : "")">
+            <a class="page-link" asp-route-pagina="@i" asp-route-buscar="@Model.Buscar" asp-route-estado="@Model.Estado"
+               asp-route-ciudad="@Model.Ciudad" asp-route-rubro="@Model.Rubro" asp-route-asignadoA="@Model.AsignadoA" asp-route-mios="@Model.Mios">@i</a>
+        </li>
+    }
+    </ul></nav>
+}

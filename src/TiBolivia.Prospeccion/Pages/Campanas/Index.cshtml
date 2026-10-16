@@ -1,0 +1,27 @@
+@page
+@model TiBolivia.Prospeccion.Pages.Campanas.IndexModel
+@{ ViewData["Title"] = "Campañas"; }
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Campañas</h3>
+    <a asp-page="Editar" class="btn btn-primary">Nueva campaña</a>
+</div>
+<p class="text-muted small">Cada campaña es una secuencia de correos y WhatsApp que se envían automáticamente con días de espera entre pasos, en horario laboral.
+    Si el prospecto responde por WhatsApp, su secuencia se pausa para que lo atienda un comercial.</p>
+<div class="card p-3">
+<table class="table table-sm mb-0">
+    <thead><tr><th>Campaña</th><th>Servicio</th><th>Pasos</th><th>En curso</th><th>Inscritos</th><th>Enviados</th><th>Tasa de respuesta</th><th>Estado</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var f in Model.Campanas)
+    {
+        <tr>
+            <td><a asp-page="Editar" asp-route-id="@f.Campana.Id">@f.Campana.Nombre</a></td>
+            <td>@f.Campana.Servicio?.Nombre</td>
+            <td>@f.Pasos</td><td>@f.Activas</td><td>@f.Total</td><td>@f.Enviados</td>
+            <td>@(f.Total == 0 ? "—" : $"{f.Respuestas * 100 / f.Total}%")</td>
+            <td><span class="badge bg-@(f.Campana.Activa ? "success" : "secondary")">@(f.Campana.Activa ? "Activa" : "Inactiva")</span></td>
+            <td><form method="post" asp-page-handler="Activar" asp-route-id="@f.Campana.Id"><button class="btn btn-sm btn-outline-secondary">@(f.Campana.Activa ? "Desactivar" : "Activar")</button></form></td>
+        </tr>
+    }
+    </tbody>
+</table>
+</div>

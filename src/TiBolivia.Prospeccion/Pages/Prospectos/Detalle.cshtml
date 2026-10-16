@@ -1,0 +1,97 @@
+@page "{id:int}"
+@model TiBolivia.Prospeccion.Pages.Prospectos.DetalleModel
+@{ var p = Model.Prospecto; ViewData["Title"] = p.Empresa; }
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">@p.Empresa <span class="badge bg-@Etiquetas.Color(p.Estado) fs-6 align-middle">@Etiquetas.Texto(p.Estado)</span></h3>
+    <div><a asp-page="Editar" asp-route-id="@p.Id" class="btn btn-outline-primary">Editar</a> <a asp-page="Index" class="btn btn-link">Volver</a></div>
+</div>
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card p-3 mb-3">
+            <dl class="row mb-0 small">
+                <dt class="col-4">Contacto</dt><dd class="col-8">@p.NombreContacto <span class="text-muted">@p.Cargo</span></dd>
+                <dt class="col-4">Correo</dt><dd class="col-8">@p.Email @if (p.BajaEmail) { <span class="badge bg-dark">baja</span> }</dd>
+                <dt class="col-4">WhatsApp</dt><dd class="col-8">@p.Telefono @if (p.BajaWhatsApp) { <span class="badge bg-dark">baja</span> } @if (!p.ConsentimientoWhatsApp) { <span class="badge bg-light text-dark">sin opt-in</span> }</dd>
+                <dt class="col-4">Ciudad</dt><dd class="col-8">@p.Ciudad</dd>
+                <dt class="col-4">Rubro</dt><dd class="col-8">@p.Rubro</dd>
+                <dt class="col-4">Sitio web</dt><dd class="col-8">@p.SitioWeb</dd>
+                <dt class="col-4">Origen</dt><dd class="col-8">@p.Origen</dd>
+                <dt class="col-4">Comercial</dt><dd class="col-8">@(p.AsignadoA?.NombreCompleto ?? "—")</dd>
+            </dl>
+            @if (!string.IsNullOrWhiteSpace(p.Notas)) { <hr /><div class="small" style="white-space:pre-wrap">@p.Notas</div> }
+        </div>
+
+        <div class="card p-3 mb-3">
+            <h6>Campañas</h6>
+            @foreach (var i in p.Inscripciones)
+            {
+                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                    <div>
+                        <div>@i.Campana.Nombre</div>
+                        <div class="small text-muted">
+                            Paso @Math.Min(i.PasoActual + 1, i.Campana.Pasos.Count) de @i.Campana.Pasos.Count
+                            @if (i.ProximoEnvio is not null) { <span>· próximo: @i.ProximoEnvio.Value.ToLocalTime().ToString("dd/MM HH:mm")</span> }
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-@Etiquetas.Color(i.Estado)">@i.Estado</span>
+                        <form method="post" asp-page-handler="EstadoInscripcion" class="d-inline">
+                            <input type="hidden" name="inscripcionId" value="@i.Id" />
+                            @if (i.Estado == EstadoInscripcion.Activa) { <button name="estado" value="Pausada" class="btn btn-sm btn-link">Pausar</button> }
+                            else if (i.Estado == EstadoInscripcion.Pausada) { <button name="estado" value="Activa" class="btn btn-sm btn-link">Reanudar</button> <button name="estado" value="Detenida" class="btn btn-sm btn-link text-danger">Detener</button> }
+                        </form>
+                    </div>
+                </div>
+            }
+            <form method="post" asp-page-handler="Inscribir" class="d-flex gap-2 mt-2">
+                <select name="campanaId" asp-items="Model.Campanas" class="form-select form-select-sm"></select>
+                <button class="btn btn-sm btn-success text-nowrap">Inscribir</button>
+            </form>
+        </div>
+
+        @if (p.Telefono is not null)
+        {
+            <div class="card p-3">
+                <h6>Responder por WhatsApp</h6>
+                @if (Model.VentanaWhatsAppAbierta)
+                {
+                    <form method="post" asp-page-handler="WhatsApp">
+                        <textarea name="texto" class="form-control mb-2" rows="3"></textarea>
+                        <button class="btn btn-sm btn-success">Enviar</button>
+                    </form>
+                }
+                else { <p class="small text-muted mb-0">Solo disponible durante las 24 h siguientes a un mensaje del cliente (regla de WhatsApp).</p> }
+            </div>
+        }
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card p-3 mb-3">
+            <form method="post" asp-page-handler="Interaccion" class="row g-2">
+                <div class="col-md-2"><select name="tipo" asp-items="Html.GetEnumSelectList<TipoInteraccion>()" class="form-select"></select></div>
+                <div class="col-md-6"><input name="detalle" class="form-control" placeholder="Registrar llamada, reunión o nota..." /></div>
+                <div class="col-md-2"><select name="nuevoEstado" asp-items="Html.GetEnumSelectList<EstadoProspecto>()" class="form-select"><option value="">(estado igual)</option></select></div>
+                <div class="col-md-2"><button class="btn btn-primary w-100">Guardar</button></div>
+            </form>
+        </div>
+        <div class="card p-3 timeline">
+            <h6>Historial</h6>
+            @if (Model.Historial.Count == 0) { <p class="text-muted mb-0">Sin actividad todavía.</p> }
+            @foreach (var h in Model.Historial)
+            {
+                <div class="item @h.Clase">
+                    <div class="small text-muted">@h.Fecha.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                        @if (h.Badge is not null) { <span class="badge bg-@h.BadgeColor ms-1">@h.Badge</span> }
+                    </div>
+                    <div class="fw-semibold">@h.Titulo</div>
+                    @if (h.Clase == "saliente" && h.Titulo.StartsWith("Correo"))
+                    {
+                        <details><summary class="small">Ver contenido</summary><div class="mensaje-cuerpo small">@Html.Raw(h.Detalle)</div></details>
+                    }
+                    else if (!string.IsNullOrEmpty(h.Detalle)) { <div class="small" style="white-space:pre-wrap">@h.Detalle</div> }
+                    @if (h.Error is not null) { <div class="small text-danger">@h.Error</div> }
+                </div>
+            }
+        </div>
+    </div>
+</div>

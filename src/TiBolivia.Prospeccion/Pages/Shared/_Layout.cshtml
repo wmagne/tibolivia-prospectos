@@ -1,0 +1,65 @@
+@inject Microsoft.Extensions.Options.IOptions<TiBolivia.Prospeccion.Services.SmtpOptions> Smtp
+@inject Microsoft.Extensions.Options.IOptions<TiBolivia.Prospeccion.Services.WhatsAppOptions> WhatsApp
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Prospección TI Bolivia</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand fw-bold" asp-page="/Index">TI Bolivia · Prospección</a>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu" aria-label="Menú">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="menu">
+                        <ul class="navbar-nav me-auto">
+                            <li class="nav-item"><a class="nav-link" asp-page="/Index">Panel</a></li>
+                            <li class="nav-item"><a class="nav-link" asp-page="/Prospectos/Index">Prospectos</a></li>
+                            <li class="nav-item"><a class="nav-link" asp-page="/Mensajes/Index">Mensajes</a></li>
+                            @if (User.IsInRole(Roles.Admin))
+                            {
+                                <li class="nav-item"><a class="nav-link" asp-page="/Campanas/Index">Campañas</a></li>
+                                <li class="nav-item"><a class="nav-link" asp-page="/Plantillas/Index">Plantillas</a></li>
+                                <li class="nav-item"><a class="nav-link" asp-page="/Servicios/Index">Servicios</a></li>
+                                <li class="nav-item"><a class="nav-link" asp-page="/Usuarios/Index">Usuarios</a></li>
+                            }
+                        </ul>
+                        <span class="navbar-text me-3">@User.Identity.Name</span>
+                        <form method="post" asp-page="/Cuenta/Logout"><button class="btn btn-outline-light btn-sm">Salir</button></form>
+                    </div>
+                }
+            </div>
+        </nav>
+    </header>
+    <div class="container-fluid px-4">
+        @if (User.Identity?.IsAuthenticated == true && (Smtp.Value.Simulacion || WhatsApp.Value.Simulacion))
+        {
+            <div class="alert alert-warning py-2 small">
+                <b>Modo simulación:</b>
+                @(Smtp.Value.Simulacion ? "correo (SMTP no configurado)" : "")
+                @(Smtp.Value.Simulacion && WhatsApp.Value.Simulacion ? " y " : "")
+                @(WhatsApp.Value.Simulacion ? "WhatsApp (API de Meta no configurada)" : "").
+                Los mensajes se registran pero no se envían.
+            </div>
+        }
+        @if (TempData["Ok"] is string ok) { <div class="alert alert-success alert-dismissible">@ok<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+        @if (TempData["Error"] is string err) { <div class="alert alert-danger alert-dismissible">@err<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

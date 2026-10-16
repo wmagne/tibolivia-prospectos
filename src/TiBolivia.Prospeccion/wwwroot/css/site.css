@@ -1,0 +1,10 @@
+html { font-size: 15px; }
+body { background: #f5f7fb; }
+.card { border: none; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.kpi { font-size: 1.9rem; font-weight: 700; }
+.table td, .table th { vertical-align: middle; }
+.mensaje-cuerpo { max-height: 220px; overflow: auto; background: #fff; border: 1px solid #eee; padding: .5rem; }
+.timeline .item { border-left: 3px solid #dee2e6; padding: .25rem 0 .75rem 1rem; }
+.timeline .item.entrante { border-left-color: #198754; }
+.timeline .item.saliente { border-left-color: #0d6efd; }
+.timeline .item.interaccion { border-left-color: #ffc107; }

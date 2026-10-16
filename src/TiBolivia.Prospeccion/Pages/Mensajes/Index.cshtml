@@ -1,0 +1,29 @@
+@page
+@model TiBolivia.Prospeccion.Pages.Mensajes.IndexModel
+@{ ViewData["Title"] = "Mensajes"; }
+<h3>Mensajes <small class="text-muted fs-6">(últimos 200)</small></h3>
+<form method="get" class="card p-3 mb-3"><div class="row g-2">
+    <div class="col-md-3"><select asp-for="Canal" asp-items="Html.GetEnumSelectList<Canal>()" class="form-select"><option value="">Todos los canales</option></select></div>
+    <div class="col-md-3"><select asp-for="Direccion" asp-items="Html.GetEnumSelectList<DireccionMensaje>()" class="form-select"><option value="">Enviados y recibidos</option></select></div>
+    <div class="col-md-3"><select asp-for="Estado" asp-items="Html.GetEnumSelectList<EstadoMensaje>()" class="form-select"><option value="">Todos los estados</option></select></div>
+    <div class="col-md-2"><button class="btn btn-secondary w-100">Filtrar</button></div>
+</div></form>
+<div class="card p-3">
+<table class="table table-sm mb-0">
+    <thead><tr><th>Fecha</th><th>Prospecto</th><th>Canal</th><th></th><th>Asunto / texto</th><th>Estado</th></tr></thead>
+    <tbody>
+    @foreach (var m in Model.Mensajes)
+    {
+        <tr>
+            <td class="text-nowrap small">@m.CreadoEn.ToLocalTime().ToString("dd/MM HH:mm")</td>
+            <td><a asp-page="/Prospectos/Detalle" asp-route-id="@m.ProspectoId">@m.Prospecto?.Empresa</a></td>
+            <td>@Etiquetas.Texto(m.Canal)</td>
+            <td>@(m.Direccion == DireccionMensaje.Entrante ? "⬅" : "➡")</td>
+            <td class="small">@(m.Asunto ?? (m.Cuerpo.Length > 90 ? m.Cuerpo[..90] + "…" : m.Cuerpo))
+                @if (m.Error is not null) { <div class="text-danger">@m.Error</div> }</td>
+            <td><span class="badge bg-@Etiquetas.Color(m.Estado)">@m.Estado</span></td>
+        </tr>
+    }
+    </tbody>
+</table>
+</div>
