@@ -14,6 +14,7 @@ public class MotorCampanas(
     HorarioLaboral horario,
     IOptions<CampanasOptions> campanasOpciones,
     IOptions<WhatsAppOptions> whatsAppOpciones,
+    IOptions<SmtpOptions> smtpOpciones,
     TimeProvider tiempo,
     ILogger<MotorCampanas> log)
 {
@@ -100,7 +101,8 @@ public class MotorCampanas(
             return Omitir(mensaje, p.BajaEmail ? "El prospecto se dio de baja de correos" : "Sin correo electrónico");
 
         var r = await email.EnviarAsync(
-            new CorreoSaliente(p.Email!, p.NombreContacto, asunto, cuerpo, renderizador.LinkBaja(p), p.AsignadoA?.Email), ct);
+            new CorreoSaliente(p.Email!, p.NombreContacto, asunto, cuerpo, renderizador.LinkBaja(p),
+                smtpOpciones.Value.ResponderAlComercial ? p.AsignadoA?.Email : null), ct);
         return Aplicar(mensaje, r);
     }
 

@@ -1,0 +1,39 @@
+@page
+@model TiBolivia.Prospeccion.Pages.Configuracion.CorreoModel
+@{ ViewData["Title"] = "Correo"; }
+<h3>Configuración de correo</h3>
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card p-3 h-100">
+            <h5>Envío (SMTP) <span class="badge bg-@(Model.Smtp.Simulacion ? "warning text-dark" : "success")">@(Model.Smtp.Simulacion ? "Simulación" : "Activo")</span></h5>
+            <dl class="row small mb-3">
+                <dt class="col-5">Servidor</dt><dd class="col-7">@Model.Smtp.Host</dd>
+                <dt class="col-5">Puerto / seguridad</dt><dd class="col-7">@Model.Smtp.Port · @(Model.Smtp.UsarStartTls ? "STARTTLS" : Model.Smtp.Port == 465 ? "SSL/TLS" : "Automático")</dd>
+                <dt class="col-5">Usuario</dt><dd class="col-7">@Model.Smtp.Usuario</dd>
+                <dt class="col-5">Contraseña</dt><dd class="col-7">@(string.IsNullOrEmpty(Model.Smtp.Password) ? "— no configurada —" : "••••••••")</dd>
+                <dt class="col-5">Remitente</dt><dd class="col-7">@Model.Smtp.RemitenteNombre &lt;@Model.Smtp.RemitenteEmail&gt;</dd>
+                <dt class="col-5">Respuestas van a</dt><dd class="col-7">@(Model.Smtp.ResponderAlComercial ? "el comercial asignado" : Model.Smtp.RemitenteEmail)</dd>
+            </dl>
+            <form method="post" asp-page-handler="PruebaSmtp" class="d-flex gap-2">
+                <input asp-for="Destino" class="form-control" placeholder="correo@ejemplo.com" />
+                <button class="btn btn-primary text-nowrap">Enviar correo de prueba</button>
+            </form>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card p-3 h-100">
+            <h5>Detección de respuestas (IMAP) <span class="badge bg-@(Model.ImapConfigurado ? "success" : "secondary")">@(Model.ImapConfigurado ? "Activo" : "Inactivo")</span></h5>
+            <p class="small text-muted">Cada @Model.Imap.IntervaloSegundos s el sistema revisa la bandeja <b>@Model.Imap.Carpeta</b> (solo lectura, no marca correos como leídos).
+                Si un prospecto respondió, pausa su secuencia y lo muestra en el Panel como "Respondieron y esperan atención".</p>
+            <dl class="row small mb-3">
+                <dt class="col-5">Servidor</dt><dd class="col-7">@(Model.Imap.Host ?? Model.Smtp.Host):@Model.Imap.Port</dd>
+                <dt class="col-5">Usuario</dt><dd class="col-7">@(string.IsNullOrEmpty(Model.Imap.Usuario) ? Model.Smtp.Usuario + " (el mismo de SMTP)" : Model.Imap.Usuario)</dd>
+            </dl>
+            <form method="post" asp-page-handler="PruebaImap"><button class="btn btn-outline-primary">Probar conexión y revisar ahora</button></form>
+        </div>
+    </div>
+</div>
+<div class="card p-3 mt-3 small">
+    Los datos se cambian en <code>appsettings.json</code> (sección <code>Smtp</code> e <code>Imap</code>). La contraseña se guarda aparte con
+    <code>dotnet user-secrets set "Smtp:Password" "..."</code> o, en el servidor, con la variable de entorno <code>Smtp__Password</code>.
+</div>

@@ -34,12 +34,13 @@ builder.Services.AddRazorPages(o =>
     o.Conventions.AllowAnonymousToPage("/Baja");
     o.Conventions.AllowAnonymousToPage("/Error");
     // Configuración de campañas, plantillas, servicios y usuarios: solo administradores.
-    foreach (var carpeta in new[] { "/Campanas", "/Plantillas", "/Servicios", "/Usuarios" })
+    foreach (var carpeta in new[] { "/Campanas", "/Plantillas", "/Servicios", "/Usuarios", "/Configuracion" })
         o.Conventions.AuthorizeFolder(carpeta, "Admin");
 });
 builder.Services.AddAuthorizationBuilder().AddPolicy("Admin", p => p.RequireRole(Roles.Admin));
 
 builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp"));
+builder.Services.Configure<ImapOptions>(builder.Configuration.GetSection("Imap"));
 builder.Services.Configure<WhatsAppOptions>(builder.Configuration.GetSection("WhatsApp"));
 builder.Services.Configure<ChatbotOptions>(builder.Configuration.GetSection("Chatbot"));
 builder.Services.Configure<CampanasOptions>(builder.Configuration.GetSection("Campanas"));
@@ -52,8 +53,12 @@ builder.Services.AddHttpClient<IEnviadorWhatsApp, EnviadorWhatsAppCloud>();
 builder.Services.AddHttpClient<IClienteChatbot, ClienteChatbotHttp>();
 builder.Services.AddScoped<MotorCampanas>();
 builder.Services.AddScoped<ServicioInscripciones>();
+builder.Services.AddScoped<LectorRespuestasEmail>();
 if (builder.Configuration.GetValue("Campanas:WorkerHabilitado", true))
+{
     builder.Services.AddHostedService<WorkerCampanas>();
+    builder.Services.AddHostedService<WorkerRespuestasEmail>();
+}
 
 builder.Services.Configure<ForwardedHeadersOptions>(o =>
 {

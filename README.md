@@ -30,12 +30,27 @@ Tecnología: **ASP.NET Core (.NET 10 LTS) + PostgreSQL**, Razor Pages + Bootstra
 - **PostgreSQL 14+**.
 - Un **dominio con HTTPS** (ej. `prospectos.tibolivia.com`). Meta exige HTTPS para el webhook de WhatsApp.
 
-### 2.2 Correo
-Use un proveedor de envío profesional, **no** una cuenta de Gmail personal (se bloquea con envíos masivos):
-- Amazon SES, Brevo, SendGrid, Mailgun o Microsoft 365. Todos ofrecen SMTP; solo se configura la sección `Smtp`.
-- En el DNS de `tibolivia.com` configure **SPF, DKIM y DMARC**. Sin esto los correos llegan a spam.
-- Recomendado: usar un subdominio para prospección (ej. `info.tibolivia.com`) y no arriesgar la reputación del dominio principal.
-- Haga un "calentamiento": empiece con 30–50 correos diarios y aumente gradualmente.
+### 2.2 Correo (servidor propio `mail.tibolivia.com`)
+Ya viene configurado en `appsettings.json` para la casilla **comercial@tibolivia.com**:
+
+| | Servidor | Puerto | Seguridad |
+|---|---|---|---|
+| Envío (SMTP) | mail.tibolivia.com | 465 | SSL/TLS |
+| Lectura de respuestas (IMAP) | mail.tibolivia.com | 993 | SSL/TLS |
+
+Solo falta la **contraseña**, que nunca se guarda en el código:
+```powershell
+dotnet user-secrets set "Smtp:Password" "CLAVE_DE_COMERCIAL"
+```
+IMAP usa el mismo usuario y contraseña. Si la red bloquea el puerto 465, cambie en `appsettings.json` `"Port": 587` y `"UsarStartTls": true`.
+
+**Respuestas por correo:** cada 2 minutos el sistema revisa la bandeja de entrada de comercial@ en modo de **solo lectura**: no marca los correos como leídos ni los mueve. Si un prospecto respondió, pausa su secuencia, lo marca como *Interesado* y lo muestra en el Panel. Las respuestas automáticas ("fuera de la oficina") se registran pero no pausan la secuencia.
+
+En el menú **Correo** (solo administradores) puede enviar un correo de prueba y probar la conexión IMAP.
+
+Recomendaciones:
+- En el DNS de `tibolivia.com` verifique **SPF, DKIM y DMARC** (pruebe en https://www.mail-tester.com, la meta es 9/10 o más). Sin esto los correos llegan a spam.
+- Pregunte el **límite de envíos por hora** de su servidor y empiece con 30–50 correos diarios.
 
 ### 2.3 WhatsApp (Meta WhatsApp Business Cloud API)
 1. Cuenta de **Meta Business** verificada (Business Manager) de TI Bolivia.
@@ -86,15 +101,15 @@ Use `telefono` como identificador de la conversación para mantener el contexto 
 
 ```bash
 # Requisitos: .NET SDK 10 y PostgreSQL
-git clone <este repositorio>
+git clone https://github.com/wmagne/tibolivia-prospectos.git SistemaProspectos
 cd SistemaProspectos
 dotnet tool restore
 
 # Configurar secretos (no los guarde en appsettings.json)
 cd src/TiBolivia.Prospeccion
-dotnet user-secrets init
 dotnet user-secrets set "ConnectionStrings:Default" "Host=localhost;Database=tibolivia_prospeccion;Username=postgres;Password=****"
 dotnet user-secrets set "Admin:Password" "UnaClaveSegura123"
+dotnet user-secrets set "Smtp:Password" "CLAVE_DE_COMERCIAL"
 
 dotnet run
 ```
@@ -102,24 +117,31 @@ dotnet run
 Al iniciar, el sistema **crea la base de datos y sus tablas** (migraciones), el usuario administrador
 (`Admin:Email` / `Admin:Password`) y datos de ejemplo: 4 servicios, 4 plantillas y una campaña de 4 pasos (inactiva).
 
-Mientras `Smtp:Host` o `WhatsApp:AccessToken` estén vacíos, el sistema funciona en **modo simulación**: registra
+Mientras falte la contraseña SMTP o `WhatsApp:AccessToken` esté vacío, el sistema funciona en **modo simulación**: registra
 los mensajes pero no los envía. Así puede probar las campañas sin riesgo.
 
 En producción configure las variables de entorno (en IIS: `web.config` o el panel del App Pool), por ejemplo:
-`ConnectionStrings__Default`, `Smtp__Host`, `Smtp__Usuario`, `Smtp__Password`, `WhatsApp__PhoneNumberId`,
+`ConnectionStrings__Default`, `Smtp__Password`, `WhatsApp__PhoneNumberId`,
 `WhatsApp__AccessToken`, `WhatsApp__VerifyToken`, `WhatsApp__AppSecret`, `Chatbot__Url`, `Chatbot__ApiKey`,
 `Campanas__UrlPublica`.
 
 Publicar: `dotnet publish -c Release -o publish`.
 
-### Copiar a `D:\Waldo\TIBolivia\SistemaProspectos` en su PC
+### Repositorio y actualizaciones
+
+El proyecto vive en https://github.com/wmagne/tibolivia-prospectos (privado). Para traer cambios a la PC:
 
 ```powershell
-git clone -b claude/dazzling-meitner-6s8v1b https://github.com/wmagne/farmacia.git $env:TEMP\farmacia
-New-Item -ItemType Directory -Force D:\Waldo\TIBolivia | Out-Null
-Copy-Item -Recurse $env:TEMP\farmacia\SistemaProspectos D:\Waldo\TIBolivia\SistemaProspectos
 cd D:\Waldo\TIBolivia\SistemaProspectos
-git init   # recomendado: que sea su propio repositorio (ej. wmagne/tibolivia-prospectos)
+git pull
+```
+
+Para subir cambios hechos en la PC:
+
+```powershell
+git add .
+git commit -m "Descripción del cambio"
+git push
 ```
 
 ## 4. Uso diario (equipo comercial)
@@ -139,6 +161,7 @@ src/TiBolivia.Prospeccion/
   Services/MotorCampanas.cs    Lógica de envío de cada paso
   Services/WorkerCampanas.cs   Servicio en segundo plano (cada 60 s)
   Services/EmailSender.cs      SMTP (MailKit)
+  Services/LectorRespuestasEmail.cs  Lee respuestas por IMAP
   Services/WhatsAppSender.cs   WhatsApp Cloud API
   Services/ChatbotClient.cs    Integración con el chatbot de la web
   Webhooks/WhatsAppWebhook.cs  Mensajes entrantes y estados de entrega
@@ -150,7 +173,6 @@ src/TiBolivia.Prospeccion/
 **Resultados comerciales**
 - **Pruebas A/B**: dos asuntos o textos por paso y quedarse con el que tenga más respuestas.
 - **Seguimiento de aperturas y clics**: píxel de apertura y enlaces con redirección para medir interés y priorizar a quién llamar (lead scoring).
-- **Detectar respuestas por correo**: leer el buzón (IMAP o webhook del proveedor) para pausar la secuencia cuando el prospecto responde un correo. Hoy eso ocurre automáticamente solo con WhatsApp; con correo lo hace el comercial desde la ficha.
 - **Agenda de reuniones**: enlace a Calendly, Google Calendar o Microsoft Bookings en las plantillas. Al agendar, el prospecto pasa a *Reunión agendada*.
 - **Propuesta en PDF** generada desde el sistema con los servicios elegidos y su seguimiento (enviada, vista, aceptada).
 - **Segmentación por rubro**: campañas distintas para salud, comercio, educación o gobierno, cada una con su caso de éxito.

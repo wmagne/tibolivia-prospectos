@@ -3,14 +3,36 @@ namespace TiBolivia.Prospeccion.Services;
 public class SmtpOptions
 {
     public string? Host { get; set; }
-    public int Port { get; set; } = 587;
-    public bool UsarStartTls { get; set; } = true;
+    /// <summary>465 = SSL/TLS directo (recomendado). 587 = STARTTLS (solo si la red bloquea el 465).</summary>
+    public int Port { get; set; } = 465;
+    /// <summary>true solo con el puerto 587.</summary>
+    public bool UsarStartTls { get; set; }
     public string? Usuario { get; set; }
     public string? Password { get; set; }
     public string RemitenteNombre { get; set; } = "TI Bolivia";
     public string RemitenteEmail { get; set; } = "comercial@tibolivia.com";
-    /// <summary>Si no hay Host configurado los correos solo se registran (modo simulación).</summary>
-    public bool Simulacion => string.IsNullOrWhiteSpace(Host);
+    /// <summary>
+    /// false (recomendado): las respuestas llegan a la casilla del remitente, que el sistema revisa por IMAP.
+    /// true: las respuestas van directo al correo del comercial asignado (el sistema no las detecta).
+    /// </summary>
+    public bool ResponderAlComercial { get; set; }
+    /// <summary>Sin servidor o sin contraseña los correos solo se registran (modo simulación).</summary>
+    public bool Simulacion => string.IsNullOrWhiteSpace(Host) || (!string.IsNullOrWhiteSpace(Usuario) && string.IsNullOrWhiteSpace(Password));
+}
+
+/// <summary>Lectura de la casilla del remitente para detectar respuestas de los prospectos.</summary>
+public class ImapOptions
+{
+    public bool Habilitado { get; set; } = true;
+    public string? Host { get; set; }
+    public int Port { get; set; } = 993;
+    /// <summary>Si están vacíos se usan el usuario y la contraseña de Smtp.</summary>
+    public string? Usuario { get; set; }
+    public string? Password { get; set; }
+    public string Carpeta { get; set; } = "INBOX";
+    public int IntervaloSegundos { get; set; } = 120;
+    /// <summary>Cuántos días hacia atrás revisar en cada lectura (los ya registrados se omiten).</summary>
+    public int DiasARevisar { get; set; } = 3;
 }
 
 public class WhatsAppOptions

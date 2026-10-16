@@ -147,10 +147,7 @@ public static class WhatsAppWebhook
         }
 
         // El prospecto respondió: se pausa la secuencia automática para que lo atienda una persona / el chatbot.
-        foreach (var i in prospecto.Inscripciones.Where(i => i.Estado == EstadoInscripcion.Activa && i.Campana.PausarAlResponder))
-        { i.Estado = EstadoInscripcion.Pausada; i.ProximoEnvio = null; }
-        if (prospecto.Estado is EstadoProspecto.Nuevo or EstadoProspecto.Contactado)
-            prospecto.Estado = EstadoProspecto.Interesado;
+        Respuestas.Registrar(prospecto, ahora);
         await db.SaveChangesAsync(ct);
 
         var campana = prospecto.Inscripciones.OrderByDescending(i => i.CreadoEn).Select(i => i.Campana).FirstOrDefault();

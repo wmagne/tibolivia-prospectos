@@ -30,6 +30,7 @@
                                 <li class="nav-item"><a class="nav-link" asp-page="/Plantillas/Index">Plantillas</a></li>
                                 <li class="nav-item"><a class="nav-link" asp-page="/Servicios/Index">Servicios</a></li>
                                 <li class="nav-item"><a class="nav-link" asp-page="/Usuarios/Index">Usuarios</a></li>
+                                <li class="nav-item"><a class="nav-link" asp-page="/Configuracion/Correo">Correo</a></li>
                             }
                         </ul>
                         <span class="navbar-text me-3">@User.Identity.Name</span>
@@ -44,7 +45,7 @@
         {
             <div class="alert alert-warning py-2 small">
                 <b>Modo simulación:</b>
-                @(Smtp.Value.Simulacion ? "correo (SMTP no configurado)" : "")
+                @(Smtp.Value.Simulacion ? "correo (falta la contraseña SMTP)" : "")
                 @(Smtp.Value.Simulacion && WhatsApp.Value.Simulacion ? " y " : "")
                 @(WhatsApp.Value.Simulacion ? "WhatsApp (API de Meta no configurada)" : "").
                 Los mensajes se registran pero no se envían.

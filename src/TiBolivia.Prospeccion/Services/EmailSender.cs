@@ -46,7 +46,10 @@ public partial class EnviadorEmailSmtp(IOptions<SmtpOptions> opciones, ILogger<E
         try
         {
             using var smtp = new SmtpClient();
-            await smtp.ConnectAsync(o.Host!, o.Port, o.UsarStartTls ? SecureSocketOptions.StartTls : SecureSocketOptions.Auto, ct);
+            var seguridad = o.UsarStartTls ? SecureSocketOptions.StartTls
+                : o.Port == 465 ? SecureSocketOptions.SslOnConnect
+                : SecureSocketOptions.Auto;
+            await smtp.ConnectAsync(o.Host!, o.Port, seguridad, ct);
             if (!string.IsNullOrEmpty(o.Usuario)) await smtp.AuthenticateAsync(o.Usuario, o.Password ?? "", ct);
             await smtp.SendAsync(msg, ct);
             await smtp.DisconnectAsync(true, ct);
