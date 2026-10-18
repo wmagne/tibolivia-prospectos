@@ -27,7 +27,12 @@ public static class DatosIniciales
             await usuarios.AddToRoleAsync(admin, Roles.Admin);
         }
 
-        if (await db.Servicios.AnyAsync()) return;
+        if (!await db.Servicios.AnyAsync()) await CrearEjemplosAsync(db);
+        await PaqueteCampanas.AplicarAsync(db);
+    }
+
+    private static async Task CrearEjemplosAsync(AppDbContext db)
+    {
 
         // Datos de ejemplo: edítelos desde la interfaz con los servicios y textos reales de TI Bolivia.
         var desarrollo = new Servicio { Nombre = "Desarrollo de software a medida", Descripcion = "Sistemas web y móviles diseñados para los procesos de su empresa." };

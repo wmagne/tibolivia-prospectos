@@ -145,6 +145,9 @@ git push
 ```
 
 ## 4. Uso diario (equipo comercial)
+
+Vea **[docs/CAMPANAS.md](docs/CAMPANAS.md)**: las 3 campañas comerciales incluidas, los textos de WhatsApp para Meta y cómo lanzarlas.
+
 1. **Importar** la lista de prospectos (Prospectos → Importar CSV; ver `docs/prospectos_ejemplo.csv`).
 2. El admin revisa/edita las **plantillas** y **activa** la campaña.
 3. El comercial filtra prospectos, los **selecciona** y pulsa **Inscribir en campaña**.
