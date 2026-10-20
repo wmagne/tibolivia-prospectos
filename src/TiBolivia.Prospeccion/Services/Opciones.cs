@@ -38,7 +38,12 @@ public class ImapOptions
 public class WhatsAppOptions
 {
     public string ApiVersion { get; set; } = "v23.0";
+    /// <summary>Dirección de la API de Meta (solo se cambia para pruebas).</summary>
+    public string GraphUrl { get; set; } = "https://graph.facebook.com";
+    /// <summary>Identificador del número en Meta (no es el número de teléfono).</summary>
     public string? PhoneNumberId { get; set; }
+    /// <summary>Identificador de la cuenta de WhatsApp Business (WABA); permite consultar las plantillas.</summary>
+    public string? BusinessAccountId { get; set; }
     public string? AccessToken { get; set; }
     /// <summary>Token que se configura en Meta para verificar el webhook.</summary>
     public string? VerifyToken { get; set; }
@@ -47,6 +52,7 @@ public class WhatsAppOptions
     /// <summary>Política de Meta: solo escribir a quien dio su consentimiento (opt-in).</summary>
     public bool RequerirConsentimiento { get; set; } = true;
     public bool Simulacion => string.IsNullOrWhiteSpace(AccessToken) || string.IsNullOrWhiteSpace(PhoneNumberId);
+    public string Url(string ruta) => $"{GraphUrl.TrimEnd('/')}/{ApiVersion}/{ruta}";
 }
 
 public class ChatbotOptions

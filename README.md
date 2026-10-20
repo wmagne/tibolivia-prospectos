@@ -66,6 +66,23 @@ Recomendaciones:
    - El texto libre solo se permite durante **24 h** después del último mensaje del cliente.
    - Meta cobra por conversación iniciada por la empresa (marketing). Revise la tarifa para Bolivia.
 
+### 2.3.1 Cargar los datos de Meta en el sistema
+
+Con el sistema detenido, ejecute el asistente en PowerShell:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File D:\Waldo\TIBolivia\SistemaProspectos\scripts\configurar-whatsapp.ps1
+```
+
+Le pedirá **Phone Number ID**, **WhatsApp Business Account ID**, **Access Token**, **App Secret**, **Verify Token** y la URL del chatbot.
+Los datos se guardan con `user-secrets`: quedan fuera del proyecto y no se suben a GitHub. Luego ejecute `dotnet run`.
+
+En el menú **WhatsApp** (solo administradores) puede:
+1. Ver qué datos faltan y la **URL del webhook** que debe poner en Meta.
+2. **Verificar la conexión**: número, nombre verificado, calidad y límite diario.
+3. **Enviar un mensaje de prueba** con `hello_world` o con las plantillas de las campañas.
+4. Ver si cada plantilla de las campañas está **APPROVED** en Meta.
+
 ### 2.4 Integración con el chatbot de la página de TI Bolivia
 Cuando un prospecto responde por WhatsApp, este sistema hace un `POST` a `Chatbot:Url` (con `Authorization: Bearer {Chatbot:ApiKey}` si se configura):
 

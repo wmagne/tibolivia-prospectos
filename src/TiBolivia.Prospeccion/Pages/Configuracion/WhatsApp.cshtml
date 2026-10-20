@@ -1,0 +1,96 @@
+@page
+@model TiBolivia.Prospeccion.Pages.Configuracion.WhatsAppModel
+@{
+    ViewData["Title"] = "WhatsApp";
+    string Marca(bool ok) => ok ? "✅" : "❌";
+    string ColorEstado(string e) => e switch { "APPROVED" => "success", "PENDING" or "IN_APPEAL" => "warning text-dark", "" => "light text-dark", _ => "danger" };
+}
+<h3>Configuración de WhatsApp (Meta)</h3>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card p-3 h-100">
+            <h5>1. Datos configurados
+                <span class="badge bg-@(Model.O.Simulacion ? "warning text-dark" : "success")">@(Model.O.Simulacion ? "Simulación" : "Activo")</span></h5>
+            <table class="table table-sm small mb-2">
+                <tr><td>@Marca(!string.IsNullOrEmpty(Model.O.PhoneNumberId))</td><td>Phone Number ID</td><td class="text-muted">obligatorio para enviar</td></tr>
+                <tr><td>@Marca(!string.IsNullOrEmpty(Model.O.AccessToken))</td><td>Access Token (permanente)</td><td class="text-muted">obligatorio para enviar</td></tr>
+                <tr><td>@Marca(!string.IsNullOrEmpty(Model.O.BusinessAccountId))</td><td>WhatsApp Business Account ID</td><td class="text-muted">para revisar plantillas</td></tr>
+                <tr><td>@Marca(!string.IsNullOrEmpty(Model.O.VerifyToken))</td><td>Verify Token</td><td class="text-muted">para conectar el webhook</td></tr>
+                <tr><td>@Marca(!string.IsNullOrEmpty(Model.O.AppSecret))</td><td>App Secret</td><td class="text-muted">seguridad del webhook</td></tr>
+                <tr><td>@Marca(Model.ChatbotConfigurado)</td><td>URL del chatbot</td><td class="text-muted">respuestas automáticas</td></tr>
+                <tr><td>@Marca(Model.O.RequerirConsentimiento)</td><td>Exigir consentimiento (opt-in)</td><td class="text-muted">recomendado</td></tr>
+            </table>
+            <p class="small mb-1">Los datos se cargan con el script <code>scripts\configurar-whatsapp.ps1</code> (ver README) y luego se reinicia el sistema.</p>
+            <hr />
+            <h6>URL del webhook para Meta</h6>
+            <code class="d-block mb-1">@Model.UrlWebhook</code>
+            @if (Model.EsLocal)
+            {
+                <p class="small text-warning-emphasis mb-0">Está en su PC (localhost): Meta no puede llegar aquí. Abra un túnel con
+                    <code>cloudflared tunnel --url http://localhost:5179</code> y use <code>https://...trycloudflare.com/webhooks/whatsapp</code>.</p>
+            }
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card p-3 mb-3">
+            <h5>2. Verificar conexión con Meta</h5>
+            <form method="post" asp-page-handler="Verificar"><button class="btn btn-primary" @(Model.O.Simulacion ? "disabled" : "")>Verificar ahora</button></form>
+            @if (Model.ErrorVerificacion is not null) { <div class="alert alert-danger small mt-2 mb-0">@Model.ErrorVerificacion</div> }
+            @if (Model.Numero is { } n)
+            {
+                <dl class="row small mt-3 mb-0">
+                    <dt class="col-5">Número</dt><dd class="col-7">@n.Numero</dd>
+                    <dt class="col-5">Nombre verificado</dt><dd class="col-7">@n.NombreVerificado <span class="text-muted">(@n.EstadoNombre)</span></dd>
+                    <dt class="col-5">Calidad</dt><dd class="col-7">@n.Calidad</dd>
+                    <dt class="col-5">Límite diario</dt><dd class="col-7">@n.LimiteMensajes</dd>
+                </dl>
+                <div class="alert alert-success small mt-2 mb-0">Conexión correcta: el token y el Phone Number ID son válidos.</div>
+            }
+        </div>
+
+        <div class="card p-3">
+            <h5>3. Enviar mensaje de prueba</h5>
+            <form method="post" asp-page-handler="Prueba" class="row g-2">
+                <div class="col-md-5"><input asp-for="Telefono" class="form-control" placeholder="71234567" /></div>
+                <div class="col-md-7">
+                    <select asp-for="PlantillaId" class="form-select">
+                        <option value="0">hello_world (prueba de Meta)</option>
+                        @foreach (var p in Model.PlantillasSistema) { <option value="@p.Id">@p.WhatsAppPlantillaMeta — @p.Nombre</option> }
+                    </select>
+                </div>
+                <div class="col-12"><button class="btn btn-success">Enviar prueba</button></div>
+            </form>
+            <p class="small text-muted mt-2 mb-0">Con el número de prueba de Meta, el destino debe estar agregado en "Configuración de la API → Para".</p>
+        </div>
+    </div>
+</div>
+
+<div class="card p-3 mt-3">
+    <h5>4. Plantillas usadas por las campañas</h5>
+    <p class="small text-muted">Cada una debe existir en WhatsApp Manager con el <b>mismo nombre e idioma</b> y estar <b>APPROVED</b>.
+        Pulse "Verificar ahora" para ver su estado (requiere el Business Account ID). Textos sugeridos en <code>docs/CAMPANAS.md</code>.</p>
+    <table class="table table-sm small mb-0">
+        <thead><tr><th>Nombre en Meta</th><th>Idioma</th><th>Variables</th><th>Plantilla del sistema</th><th>Estado en Meta</th></tr></thead>
+        <tbody>
+        @foreach (var p in Model.PlantillasSistema)
+        {
+            var estado = Model.EstadoEnMeta(p);
+            <tr>
+                <td><code>@p.WhatsAppPlantillaMeta</code></td><td>@p.WhatsAppIdioma</td><td>@p.WhatsAppParametros</td>
+                <td><a asp-page="/Plantillas/Editar" asp-route-id="@p.Id">@p.Nombre</a></td>
+                <td>@if (estado != "") { <span class="badge bg-@ColorEstado(estado)">@estado</span> } else { <span class="text-muted">—</span> }</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+    @if (Model.PlantillasMeta is { Count: > 0 } todas)
+    {
+        <details class="mt-2"><summary class="small">Todas las plantillas de su cuenta en Meta (@todas.Count)</summary>
+            <table class="table table-sm small mt-2">
+                @foreach (var t in todas) { <tr><td>@t.Nombre</td><td>@t.Idioma</td><td>@t.Categoria</td><td><span class="badge bg-@ColorEstado(t.Estado)">@t.Estado</span></td></tr> }
+            </table>
+        </details>
+    }
+</div>

@@ -46,7 +46,7 @@ public class EnviadorWhatsAppCloud(HttpClient http, IOptions<WhatsAppOptions> op
 
         try
         {
-            using var req = new HttpRequestMessage(HttpMethod.Post, $"https://graph.facebook.com/{o.ApiVersion}/{o.PhoneNumberId}/messages")
+            using var req = new HttpRequestMessage(HttpMethod.Post, o.Url($"{o.PhoneNumberId}/messages"))
             {
                 Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json")
             };
@@ -56,7 +56,7 @@ public class EnviadorWhatsAppCloud(HttpClient http, IOptions<WhatsAppOptions> op
             if (!resp.IsSuccessStatusCode)
             {
                 log.LogWarning("WhatsApp respondió {Status}: {Cuerpo}", (int)resp.StatusCode, cuerpo);
-                return ResultadoEnvio.Falla($"HTTP {(int)resp.StatusCode}: {cuerpo}");
+                return ResultadoEnvio.Falla(DiagnosticoWhatsApp.ErrorLegible(cuerpo, (int)resp.StatusCode));
             }
             using var doc = JsonDocument.Parse(cuerpo);
             var id = doc.RootElement.GetProperty("messages")[0].GetProperty("id").GetString();
