@@ -49,7 +49,11 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<HorarioLaboral>();
 builder.Services.AddSingleton<RenderizadorPlantillas>();
 builder.Services.AddSingleton<IEnviadorEmail, EnviadorEmailSmtp>();
-builder.Services.AddHttpClient<IEnviadorWhatsApp, EnviadorWhatsAppCloud>();
+// Proveedor de WhatsApp parametrizable: "WhatsApp:Proveedor" = "Meta" (por defecto) o "TextMeBot".
+if (string.Equals(builder.Configuration["WhatsApp:Proveedor"], ProveedoresWhatsApp.TextMeBot, StringComparison.OrdinalIgnoreCase))
+    builder.Services.AddHttpClient<IEnviadorWhatsApp, EnviadorWhatsAppTextMeBot>();
+else
+    builder.Services.AddHttpClient<IEnviadorWhatsApp, EnviadorWhatsAppCloud>();
 builder.Services.AddHttpClient<IClienteChatbot, ClienteChatbotHttp>();
 builder.Services.AddHttpClient<DiagnosticoWhatsApp>();
 builder.Services.AddScoped<MotorCampanas>();
@@ -87,6 +91,7 @@ app.UseAuthorization();
 
 app.MapStaticAssets();
 app.MapWhatsAppWebhook();
+app.MapTextMeBotWebhook();
 app.MapRazorPages().WithStaticAssets();
 
 app.Run();

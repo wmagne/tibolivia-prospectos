@@ -21,15 +21,37 @@ function Guardar([string]$clave, [string]$valor) {
 }
 
 Write-Host ""
-Write-Host "=== Configuracion de WhatsApp (Meta) ===" -ForegroundColor Cyan
+Write-Host "=== Configuracion de WhatsApp ===" -ForegroundColor Cyan
 Write-Host "Deje un dato vacio (Enter) para no cambiarlo. Los datos ocultos no se ven mientras escribe."
+Write-Host ""
+Write-Host "Proveedor de WhatsApp:"
+Write-Host "  1 = Meta (oficial, recomendado para prospectos)"
+Write-Host "  2 = TextMeBot (no oficial, riesgo de bloqueo del numero)"
+$opcion = Leer "Elija 1 o 2"
+
+if ($opcion -eq "2") {
+    Guardar "WhatsApp:Proveedor" "TextMeBot"
+    Write-Host ""
+    Write-Host "La API Key esta en el correo de TextMeBot o en su panel." -ForegroundColor Yellow
+    Guardar "WhatsApp:TextMeBot:ApiKey" (Leer "API Key de TextMeBot (oculta)" $true)
+    $token = Leer "Token para el webhook de respuestas (Enter = generar uno)"
+    if ([string]::IsNullOrWhiteSpace($token)) { $token = [guid]::NewGuid().ToString("N").Substring(0, 16) }
+    Guardar "WhatsApp:TextMeBot:TokenWebhook" $token
+    Guardar "Chatbot:Url" (Leer "URL del chatbot (opcional, Enter para omitir)")
+    Write-Host ""
+    Write-Host "Listo. URL para recibir respuestas (configurela en el panel de TextMeBot):" -ForegroundColor Cyan
+    Write-Host "  https://SU-DOMINIO/webhooks/textmebot?token=$token"
+    Write-Host "Ahora ejecute 'dotnet run' y entre al menu WhatsApp para enviar un mensaje de prueba."
+    exit
+}
+
+Guardar "WhatsApp:Proveedor" "Meta"
 Write-Host ""
 Write-Host "Donde encontrar cada dato en developers.facebook.com -> su app:" -ForegroundColor Yellow
 Write-Host "  - Phone Number ID y WhatsApp Business Account ID: WhatsApp -> Configuracion de la API"
 Write-Host "  - Access Token permanente: business.facebook.com -> Usuarios del sistema -> Generar token"
 Write-Host "  - App Secret: Configuracion de la app -> Basica -> Clave secreta"
 Write-Host ""
-
 Guardar "WhatsApp:PhoneNumberId"     (Leer "Phone Number ID")
 Guardar "WhatsApp:BusinessAccountId" (Leer "WhatsApp Business Account ID")
 Guardar "WhatsApp:AccessToken"       (Leer "Access Token permanente (oculto)" $true)

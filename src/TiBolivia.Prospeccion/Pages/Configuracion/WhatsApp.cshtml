@@ -5,7 +5,15 @@
     string Marca(bool ok) => ok ? "✅" : "❌";
     string ColorEstado(string e) => e switch { "APPROVED" => "success", "PENDING" or "IN_APPEAL" => "warning text-dark", "" => "light text-dark", _ => "danger" };
 }
-<h3>Configuración de WhatsApp (Meta)</h3>
+<h3>Configuración de WhatsApp <span class="badge bg-primary fs-6 align-middle">Proveedor: @(Model.O.EsMeta ? "Meta (oficial)" : "TextMeBot")</span></h3>
+@if (!Model.O.EsMeta)
+{
+    <div class="alert alert-warning small">
+        <b>TextMeBot no es un servicio oficial de WhatsApp.</b> Usa un WhatsApp normal vinculado por QR: escribir a muchas personas que no lo tienen
+        agendado puede hacer que WhatsApp <b>bloquee el número</b>. Úselo con pocos mensajes diarios y contactos que esperan su mensaje.
+        Los mensajes salen con una pausa de @Model.O.TextMeBot.SegundosEntreMensajes s entre cada uno.
+    </div>
+}
 
 <div class="row g-3">
     <div class="col-lg-6">
@@ -13,17 +21,25 @@
             <h5>1. Datos configurados
                 <span class="badge bg-@(Model.O.Simulacion ? "warning text-dark" : "success")">@(Model.O.Simulacion ? "Simulación" : "Activo")</span></h5>
             <table class="table table-sm small mb-2">
-                <tr><td>@Marca(!string.IsNullOrEmpty(Model.O.PhoneNumberId))</td><td>Phone Number ID</td><td class="text-muted">obligatorio para enviar</td></tr>
-                <tr><td>@Marca(!string.IsNullOrEmpty(Model.O.AccessToken))</td><td>Access Token (permanente)</td><td class="text-muted">obligatorio para enviar</td></tr>
-                <tr><td>@Marca(!string.IsNullOrEmpty(Model.O.BusinessAccountId))</td><td>WhatsApp Business Account ID</td><td class="text-muted">para revisar plantillas</td></tr>
-                <tr><td>@Marca(!string.IsNullOrEmpty(Model.O.VerifyToken))</td><td>Verify Token</td><td class="text-muted">para conectar el webhook</td></tr>
-                <tr><td>@Marca(!string.IsNullOrEmpty(Model.O.AppSecret))</td><td>App Secret</td><td class="text-muted">seguridad del webhook</td></tr>
+                @if (Model.O.EsMeta)
+                {
+                    <tr><td>@Marca(!string.IsNullOrEmpty(Model.O.PhoneNumberId))</td><td>Phone Number ID</td><td class="text-muted">obligatorio para enviar</td></tr>
+                    <tr><td>@Marca(!string.IsNullOrEmpty(Model.O.AccessToken))</td><td>Access Token (permanente)</td><td class="text-muted">obligatorio para enviar</td></tr>
+                    <tr><td>@Marca(!string.IsNullOrEmpty(Model.O.BusinessAccountId))</td><td>WhatsApp Business Account ID</td><td class="text-muted">para revisar plantillas</td></tr>
+                    <tr><td>@Marca(!string.IsNullOrEmpty(Model.O.VerifyToken))</td><td>Verify Token</td><td class="text-muted">para conectar el webhook</td></tr>
+                    <tr><td>@Marca(!string.IsNullOrEmpty(Model.O.AppSecret))</td><td>App Secret</td><td class="text-muted">seguridad del webhook</td></tr>
+                }
+                else
+                {
+                    <tr><td>@Marca(!string.IsNullOrEmpty(Model.O.TextMeBot.ApiKey))</td><td>API Key de TextMeBot</td><td class="text-muted">obligatoria para enviar</td></tr>
+                    <tr><td>@Marca(!string.IsNullOrEmpty(Model.O.TextMeBot.TokenWebhook))</td><td>Token del webhook</td><td class="text-muted">para recibir respuestas</td></tr>
+                }
                 <tr><td>@Marca(Model.ChatbotConfigurado)</td><td>URL del chatbot</td><td class="text-muted">respuestas automáticas</td></tr>
                 <tr><td>@Marca(Model.O.RequerirConsentimiento)</td><td>Exigir consentimiento (opt-in)</td><td class="text-muted">recomendado</td></tr>
             </table>
             <p class="small mb-1">Los datos se cargan con el script <code>scripts\configurar-whatsapp.ps1</code> (ver README) y luego se reinicia el sistema.</p>
             <hr />
-            <h6>URL del webhook para Meta</h6>
+            <h6>URL del webhook para @(Model.O.EsMeta ? "Meta" : "el panel de TextMeBot")</h6>
             <code class="d-block mb-1">@Model.UrlWebhook</code>
             @if (Model.EsLocal)
             {
@@ -36,7 +52,7 @@
     <div class="col-lg-6">
         <div class="card p-3 mb-3">
             <h5>2. Verificar conexión con Meta</h5>
-            <form method="post" asp-page-handler="Verificar"><button class="btn btn-primary" @(Model.O.Simulacion ? "disabled" : "")>Verificar ahora</button></form>
+            <form method="post" asp-page-handler="Verificar"><button class="btn btn-primary" @(Model.O.Simulacion || !Model.O.EsMeta ? "disabled" : "")>Verificar ahora</button></form>
             @if (Model.ErrorVerificacion is not null) { <div class="alert alert-danger small mt-2 mb-0">@Model.ErrorVerificacion</div> }
             @if (Model.Numero is { } n)
             {
@@ -56,17 +72,19 @@
                 <div class="col-md-5"><input asp-for="Telefono" class="form-control" placeholder="71234567" /></div>
                 <div class="col-md-7">
                     <select asp-for="PlantillaId" class="form-select">
-                        <option value="0">hello_world (prueba de Meta)</option>
+                        <option value="0">@(Model.O.EsMeta ? "hello_world (prueba de Meta)" : "Mensaje de prueba simple")</option>
                         @foreach (var p in Model.PlantillasSistema) { <option value="@p.Id">@p.WhatsAppPlantillaMeta — @p.Nombre</option> }
                     </select>
                 </div>
                 <div class="col-12"><button class="btn btn-success">Enviar prueba</button></div>
             </form>
-            <p class="small text-muted mt-2 mb-0">Con el número de prueba de Meta, el destino debe estar agregado en "Configuración de la API → Para".</p>
+            <p class="small text-muted mt-2 mb-0">@(Model.O.EsMeta ? "" : "Con TextMeBot se envía el texto de la plantilla del sistema. ")Con el número de prueba de Meta, el destino debe estar agregado en "Configuración de la API → Para".</p>
         </div>
     </div>
 </div>
 
+@if (Model.O.EsMeta)
+{
 <div class="card p-3 mt-3">
     <h5>4. Plantillas usadas por las campañas</h5>
     <p class="small text-muted">Cada una debe existir en WhatsApp Manager con el <b>mismo nombre e idioma</b> y estar <b>APPROVED</b>.
@@ -94,3 +112,4 @@
         </details>
     }
 </div>
+}

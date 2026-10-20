@@ -66,7 +66,23 @@ Recomendaciones:
    - El texto libre solo se permite durante **24 h** después del último mensaje del cliente.
    - Meta cobra por conversación iniciada por la empresa (marketing). Revise la tarifa para Bolivia.
 
-### 2.3.1 Cargar los datos de Meta en el sistema
+### 2.3.0 Elegir el proveedor de WhatsApp
+
+El proveedor se elige con el ajuste `WhatsApp:Proveedor`:
+
+| Valor | Servicio | Cuándo usarlo |
+|---|---|---|
+| `Meta` (por defecto) | API oficial de WhatsApp Business | Prospección a empresas: plantillas aprobadas, sin riesgo de bloqueo si respeta el opt-in |
+| `TextMeBot` | Servicio no oficial (WhatsApp normal vinculado por QR) | Pocos mensajes a contactos que esperan su mensaje. **Riesgo de bloqueo del número** con envíos masivos |
+
+Con TextMeBot:
+- Se envía el **texto completo** de la plantilla del sistema, sin aprobación de Meta y sin la ventana de 24 h.
+- Los mensajes salen con una **pausa** (`WhatsApp:TextMeBot:SegundosEntreMensajes`, 8 s por defecto).
+- Las respuestas llegan a `https://SU-DOMINIO/webhooks/textmebot?token=SU_TOKEN`, que se configura en el panel de TextMeBot.
+
+El asistente `scripts\configurar-whatsapp.ps1` pregunta el proveedor y pide solo los datos que ese proveedor necesita.
+
+### 2.3.1 Cargar los datos en el sistema
 
 Con el sistema detenido, ejecute el asistente en PowerShell:
 

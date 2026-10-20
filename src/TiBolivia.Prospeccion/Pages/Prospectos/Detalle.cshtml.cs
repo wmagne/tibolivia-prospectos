@@ -14,7 +14,7 @@ public class DetalleModel(AppDbContext db, ServicioInscripciones inscripciones, 
     public Prospecto Prospecto { get; private set; } = null!;
     public List<(DateTime Fecha, string Clase, string Titulo, string? Detalle, string? Badge, string? BadgeColor, string? Error)> Historial { get; private set; } = [];
     public SelectList Campanas { get; private set; } = null!;
-    public bool VentanaWhatsAppAbierta => Prospecto.UltimaRespuestaEn > DateTime.UtcNow.AddHours(-24);
+    public bool VentanaWhatsAppAbierta => !whatsApp.RequierePlantillasAprobadas || Prospecto.UltimaRespuestaEn > DateTime.UtcNow.AddHours(-24);
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
@@ -84,7 +84,7 @@ public class DetalleModel(AppDbContext db, ServicioInscripciones inscripciones, 
     {
         var p = await db.Prospectos.FindAsync(id);
         if (p?.Telefono is null || string.IsNullOrWhiteSpace(texto)) return RedirectToPage(new { id });
-        if (!(p.UltimaRespuestaEn > DateTime.UtcNow.AddHours(-24)))
+        if (whatsApp.RequierePlantillasAprobadas && !(p.UltimaRespuestaEn > DateTime.UtcNow.AddHours(-24)))
         {
             TempData["Error"] = "WhatsApp solo permite texto libre dentro de las 24 h desde el último mensaje del cliente. Use una campaña con plantilla aprobada.";
             return RedirectToPage(new { id });

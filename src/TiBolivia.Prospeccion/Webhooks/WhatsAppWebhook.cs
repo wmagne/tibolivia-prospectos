@@ -104,13 +104,17 @@ public static class WhatsAppWebhook
         await db.SaveChangesAsync(ct);
     }
 
-    private static async Task RecibirMensajeAsync(AppDbContext db, IServiceProvider sp, JsonElement m, ILogger log, CancellationToken ct)
-    {
-        var telefono = Telefonos.Normalizar(m.GetProperty("from").GetString())!;
-        var wamid = m.GetProperty("id").GetString();
-        if (await db.Mensajes.AnyAsync(x => x.ProveedorId == wamid, ct)) return; // Meta puede reenviar el mismo evento
+    private static Task RecibirMensajeAsync(AppDbContext db, IServiceProvider sp, JsonElement m, ILogger log, CancellationToken ct) =>
+        ProcesarEntranteAsync(db, sp, Telefonos.Normalizar(m.GetProperty("from").GetString())!, m.GetProperty("id").GetString(), ExtraerTexto(m), log, ct);
 
-        var texto = ExtraerTexto(m);
+    /// <summary>
+    /// Procesa un mensaje entrante de cualquier proveedor: lo registra, atiende las bajas, pausa la secuencia
+    /// y lo pasa al chatbot. Se usa desde el webhook de Meta y el de TextMeBot.
+    /// </summary>
+    internal static async Task ProcesarEntranteAsync(AppDbContext db, IServiceProvider sp, string telefono, string? wamid, string texto, ILogger log, CancellationToken ct)
+    {
+        if (wamid is not null && await db.Mensajes.AnyAsync(x => x.ProveedorId == wamid, ct)) return; // el proveedor puede reenviar el mismo evento
+
         var prospecto = await db.Prospectos
             .Include(p => p.AsignadoA)
             .Include(p => p.Inscripciones).ThenInclude(i => i.Campana).ThenInclude(c => c.Servicio)

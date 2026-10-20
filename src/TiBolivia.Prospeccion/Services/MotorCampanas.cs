@@ -119,7 +119,11 @@ public class MotorCampanas(
             return Omitir(mensaje, "Sin consentimiento (opt-in) para WhatsApp");
 
         ResultadoEnvio r;
-        if (!string.IsNullOrWhiteSpace(plantilla.WhatsAppPlantillaMeta))
+        if (!whatsApp.RequierePlantillasAprobadas)
+        {
+            r = await whatsApp.EnviarTextoAsync(p.Telefono!, texto, ct);
+        }
+        else if (!string.IsNullOrWhiteSpace(plantilla.WhatsAppPlantillaMeta))
         {
             var parametros = (plantilla.WhatsAppParametros ?? "")
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)

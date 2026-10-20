@@ -35,8 +35,31 @@ public class ImapOptions
     public int DiasARevisar { get; set; } = 3;
 }
 
+public static class ProveedoresWhatsApp
+{
+    /// <summary>API oficial de Meta (WhatsApp Business Cloud API). Recomendado para prospectos.</summary>
+    public const string Meta = "Meta";
+    /// <summary>TextMeBot: servicio no oficial que usa un WhatsApp normal vinculado por QR.</summary>
+    public const string TextMeBot = "TextMeBot";
+}
+
+public class TextMeBotOptions
+{
+    public string? ApiKey { get; set; }
+    public string Url { get; set; } = "https://api.textmebot.com/send.php";
+    /// <summary>Pausa entre mensajes para no ser bloqueado por WhatsApp (TextMeBot recomienda varios segundos).</summary>
+    public int SegundosEntreMensajes { get; set; } = 8;
+    /// <summary>Clave que debe ir en la URL del webhook (?token=...) para aceptar mensajes entrantes.</summary>
+    public string? TokenWebhook { get; set; }
+}
+
 public class WhatsAppOptions
 {
+    /// <summary>"Meta" (por defecto) o "TextMeBot".</summary>
+    public string Proveedor { get; set; } = ProveedoresWhatsApp.Meta;
+    public TextMeBotOptions TextMeBot { get; set; } = new();
+    public bool EsMeta => !string.Equals(Proveedor, ProveedoresWhatsApp.TextMeBot, StringComparison.OrdinalIgnoreCase);
+
     public string ApiVersion { get; set; } = "v23.0";
     /// <summary>Dirección de la API de Meta (solo se cambia para pruebas).</summary>
     public string GraphUrl { get; set; } = "https://graph.facebook.com";
@@ -51,7 +74,9 @@ public class WhatsAppOptions
     public string? AppSecret { get; set; }
     /// <summary>Política de Meta: solo escribir a quien dio su consentimiento (opt-in).</summary>
     public bool RequerirConsentimiento { get; set; } = true;
-    public bool Simulacion => string.IsNullOrWhiteSpace(AccessToken) || string.IsNullOrWhiteSpace(PhoneNumberId);
+    public bool Simulacion => EsMeta
+        ? string.IsNullOrWhiteSpace(AccessToken) || string.IsNullOrWhiteSpace(PhoneNumberId)
+        : string.IsNullOrWhiteSpace(TextMeBot.ApiKey);
     public string Url(string ruta) => $"{GraphUrl.TrimEnd('/')}/{ApiVersion}/{ruta}";
 }
 

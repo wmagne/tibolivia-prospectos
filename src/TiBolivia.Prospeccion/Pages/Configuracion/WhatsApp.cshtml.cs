@@ -18,7 +18,9 @@ public class WhatsAppModel(
 {
     public WhatsAppOptions O => opciones.Value;
     public bool ChatbotConfigurado => !string.IsNullOrWhiteSpace(chatbot.Value.Url);
-    public string UrlWebhook => $"{Request.Scheme}://{Request.Host}/webhooks/whatsapp";
+    public string UrlWebhook => O.EsMeta
+        ? $"{Request.Scheme}://{Request.Host}/webhooks/whatsapp"
+        : $"{Request.Scheme}://{Request.Host}/webhooks/textmebot?token={O.TextMeBot.TokenWebhook ?? "(configure TokenWebhook)"}";
     public bool EsLocal => Request.Host.Host is "localhost" or "127.0.0.1";
 
     public List<Plantilla> PlantillasSistema { get; private set; } = [];
@@ -34,6 +36,11 @@ public class WhatsAppModel(
     public async Task<IActionResult> OnPostVerificarAsync()
     {
         await CargarAsync();
+        if (!O.EsMeta)
+        {
+            ErrorVerificacion = "La verificación con Meta no aplica a TextMeBot: use \"Enviar mensaje de prueba\".";
+            return Page();
+        }
         if (O.Simulacion)
         {
             ErrorVerificacion = "Falta configurar el Access Token y el Phone Number ID.";
@@ -62,7 +69,16 @@ public class WhatsAppModel(
         }
 
         ResultadoEnvio r;
-        if (PlantillaId == 0)
+        if (!enviador.RequierePlantillasAprobadas)
+        {
+            // TextMeBot: se envía el texto de la plantilla del sistema tal como lo recibiría un prospecto.
+            var p = PlantillaId == 0 ? null : await db.Plantillas.FindAsync(PlantillaId);
+            var texto = p is null
+                ? "Mensaje de prueba del Sistema de Prospección TI Bolivia. Si lo recibe, el envío por WhatsApp funciona."
+                : renderizador.Renderizar(p.Cuerpo, Ejemplo(telefono), new Servicio { Nombre = "Sistema para farmacias" }, html: false);
+            r = await enviador.EnviarTextoAsync(telefono, texto, HttpContext.RequestAborted);
+        }
+        else if (PlantillaId == 0)
         {
             // Plantilla que Meta crea en todas las cuentas: sirve para probar sin esperar aprobaciones.
             r = await enviador.EnviarPlantillaAsync(telefono, "hello_world", "en_US", [], HttpContext.RequestAborted);
@@ -71,11 +87,7 @@ public class WhatsAppModel(
         {
             var p = await db.Plantillas.FindAsync(PlantillaId);
             if (p?.WhatsAppPlantillaMeta is null) return RedirectToPage();
-            var ejemplo = new Prospecto
-            {
-                Empresa = "Empresa de Prueba", NombreContacto = "Cliente Prueba", Telefono = telefono,
-                AsignadoA = new Usuario { NombreCompleto = User.Identity?.Name ?? "Comercial" },
-            };
+            var ejemplo = Ejemplo(telefono);
             var servicio = new Servicio { Nombre = "Sistema para farmacias" };
             var parametros = (p.WhatsAppParametros ?? "")
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -88,6 +100,12 @@ public class WhatsAppModel(
             : "No se pudo enviar: " + r.Error;
         return RedirectToPage();
     }
+
+    private Prospecto Ejemplo(string telefono) => new()
+    {
+        Empresa = "Empresa de Prueba", NombreContacto = "Cliente Prueba", Telefono = telefono,
+        AsignadoA = new Usuario { NombreCompleto = User.Identity?.Name ?? "Comercial" },
+    };
 
     /// <summary>Estado de una plantilla del sistema según lo que devolvió Meta.</summary>
     public string EstadoEnMeta(Plantilla p) =>

@@ -7,6 +7,12 @@ namespace TiBolivia.Prospeccion.Services;
 
 public interface IEnviadorWhatsApp
 {
+    /// <summary>
+    /// true (Meta): el primer mensaje debe ser una plantilla aprobada y el texto libre solo vale 24 h después de que el cliente escribe.
+    /// false (TextMeBot): siempre se envía el texto de la plantilla del sistema, sin aprobación previa.
+    /// </summary>
+    bool RequierePlantillasAprobadas { get; }
+
     /// <summary>Plantilla aprobada por Meta: única forma de iniciar una conversación (fuera de la ventana de 24 h).</summary>
     Task<ResultadoEnvio> EnviarPlantillaAsync(string telefono, string plantilla, string idioma, IReadOnlyList<string> parametros, CancellationToken ct);
     /// <summary>Texto libre: solo permitido dentro de las 24 h posteriores al último mensaje del cliente.</summary>
@@ -16,6 +22,8 @@ public interface IEnviadorWhatsApp
 /// <summary>Cliente de WhatsApp Business Cloud API (Meta).</summary>
 public class EnviadorWhatsAppCloud(HttpClient http, IOptions<WhatsAppOptions> opciones, ILogger<EnviadorWhatsAppCloud> log) : IEnviadorWhatsApp
 {
+    public bool RequierePlantillasAprobadas => true;
+
     public Task<ResultadoEnvio> EnviarPlantillaAsync(string telefono, string plantilla, string idioma, IReadOnlyList<string> parametros, CancellationToken ct)
     {
         object template = parametros.Count == 0
