@@ -42,30 +42,40 @@ public class DiagnosticoWhatsApp(HttpClient http, IOptions<WhatsAppOptions> opci
     /// <summary>Traduce los errores más comunes de Meta a una explicación en español.</summary>
     public static string ErrorLegible(string cuerpo, int status)
     {
-        string? mensaje = null; int codigo = 0;
+        string? mensaje = null, mensajeUsuario = null; int codigo = 0, subcodigo = 0;
         try
         {
             using var doc = JsonDocument.Parse(cuerpo);
             var e = doc.RootElement.GetProperty("error");
             mensaje = Texto(e, "message");
+            mensajeUsuario = Texto(e, "error_user_msg");
             if (e.TryGetProperty("code", out var c) && c.TryGetInt32(out var n)) codigo = n;
+            if (e.TryGetProperty("error_subcode", out var sc) && sc.TryGetInt32(out var sn)) subcodigo = sn;
         }
         catch (Exception ex) when (ex is JsonException or KeyNotFoundException or InvalidOperationException) { }
 
-        var explicacion = codigo switch
-        {
-            190 => "El token de acceso no es válido o venció. Genere un token permanente (usuario del sistema) y vuelva a configurarlo.",
-            10 or 200 => "El token no tiene permisos. Al generarlo marque whatsapp_business_messaging y whatsapp_business_management, y asigne la app y la cuenta de WhatsApp al usuario del sistema.",
-            100 => "Algún identificador es incorrecto (Phone Number ID o Business Account ID). Cópielos de nuevo desde Meta.",
-            131030 => "El número de destino no está en la lista de números permitidos del número de prueba. Agréguelo en Configuración de la API → Para.",
-            132001 => "La plantilla no existe o no está aprobada en ese idioma. Revise el nombre exacto y el idioma (es).",
-            132000 => "La cantidad de variables no coincide con la plantilla aprobada en Meta.",
-            131047 => "Pasaron más de 24 h desde el último mensaje del cliente: solo se puede enviar una plantilla aprobada.",
-            131026 => "El número de destino no tiene WhatsApp o no puede recibir el mensaje.",
-            133010 => "El número de envío no está registrado en la API. Complete el registro del número en Meta.",
-            _ => null,
-        };
-        return explicacion is null ? $"Meta respondió HTTP {status}: {mensaje ?? cuerpo}" : $"{explicacion} (Meta: {mensaje})";
+        var texto = (mensaje + " " + mensajeUsuario).ToLowerInvariant();
+        var explicacion =
+            texto.Contains("callback verification") || texto.Contains("callback url")
+                ? "Meta no pudo verificar la URL del webhook. Revise que el sistema esté accesible desde internet (túnel o servidor) y que el Verify Token sea el mismo."
+            : texto.Contains("already exists") || subcodigo is 2388023 or 2388024
+                ? "Ya existe una plantilla con ese nombre e idioma en Meta (puede estar en revisión)."
+            : codigo switch
+            {
+                190 => "El token de acceso no es válido o venció. Genere un token permanente (usuario del sistema) y vuelva a configurarlo.",
+                10 or 200 => "El token no tiene permisos. Al generarlo marque whatsapp_business_messaging y whatsapp_business_management, y asigne la app y la cuenta de WhatsApp al usuario del sistema.",
+                100 => "Algún dato enviado no es válido (identificador, texto de la plantilla o campo del perfil).",
+                131030 => "El número de destino no está en la lista de números permitidos del número de prueba. Agréguelo en Configuración de la API → Para.",
+                132001 => "La plantilla no existe o no está aprobada en ese idioma. Revise el nombre exacto y el idioma (es).",
+                132000 => "La cantidad de variables no coincide con la plantilla aprobada en Meta.",
+                131047 => "Pasaron más de 24 h desde el último mensaje del cliente: solo se puede enviar una plantilla aprobada.",
+                131026 => "El número de destino no tiene WhatsApp o no puede recibir el mensaje.",
+                133010 => "El número de envío no está registrado en la API. Use \"Registrar número\" en el asistente de configuración.",
+                133005 => "El PIN no coincide con la verificación en dos pasos ya configurada para este número.",
+                _ => null,
+            };
+        var detalle = mensajeUsuario ?? mensaje ?? cuerpo;
+        return explicacion is null ? $"Meta respondió HTTP {status}: {detalle}" : $"{explicacion} (Meta: {detalle})";
     }
 
     private static string? Texto(JsonElement e, string propiedad) =>

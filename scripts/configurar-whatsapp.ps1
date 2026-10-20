@@ -55,6 +55,7 @@ Write-Host ""
 Guardar "WhatsApp:PhoneNumberId"     (Leer "Phone Number ID")
 Guardar "WhatsApp:BusinessAccountId" (Leer "WhatsApp Business Account ID")
 Guardar "WhatsApp:AccessToken"       (Leer "Access Token permanente (oculto)" $true)
+Guardar "WhatsApp:AppId"             (Leer "App ID (Configuracion de la app -> Basica)")
 Guardar "WhatsApp:AppSecret"         (Leer "App Secret (oculto)" $true)
 
 $verify = Leer "Verify Token para el webhook (Enter = generar uno)"

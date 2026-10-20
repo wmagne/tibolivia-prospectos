@@ -56,6 +56,7 @@ else
     builder.Services.AddHttpClient<IEnviadorWhatsApp, EnviadorWhatsAppCloud>();
 builder.Services.AddHttpClient<IClienteChatbot, ClienteChatbotHttp>();
 builder.Services.AddHttpClient<DiagnosticoWhatsApp>();
+builder.Services.AddHttpClient<ConfiguradorMeta>();
 builder.Services.AddScoped<MotorCampanas>();
 builder.Services.AddScoped<ServicioInscripciones>();
 builder.Services.AddScoped<LectorRespuestasEmail>();

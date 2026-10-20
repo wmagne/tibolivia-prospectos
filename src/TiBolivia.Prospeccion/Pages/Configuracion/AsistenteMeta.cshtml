@@ -1,0 +1,110 @@
+@page
+@model TiBolivia.Prospeccion.Pages.Configuracion.AsistenteMetaModel
+@{
+    ViewData["Title"] = "Asistente Meta";
+    string Marca(bool ok) => ok ? "✅" : "❌";
+    string ColorEstado(string e) => e switch { "APPROVED" => "success", "PENDING" or "IN_APPEAL" => "warning text-dark", "" => "light text-dark", _ => "danger" };
+}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Asistente de configuración de Meta (WhatsApp)</h3>
+    <a asp-page="WhatsApp" class="btn btn-outline-secondary">Ir a verificación y pruebas</a>
+</div>
+
+@foreach (var (texto, ok) in Model.Resultados)
+{
+    <div class="alert alert-@(ok ? "success" : "danger") py-2">@texto</div>
+}
+
+<div class="card p-3 mb-3">
+    <h5>Paso 1 · Lo que se hace en la web de Meta (manual)</h5>
+    <ol class="small mb-2">
+        <li>Crear el portafolio de empresa en <a href="https://business.facebook.com" target="_blank">business.facebook.com</a>.</li>
+        <li>Crear la app en <a href="https://developers.facebook.com/apps" target="_blank">developers.facebook.com</a> con el caso de uso "Conectarse con clientes a través de WhatsApp".</li>
+        <li>En la app: WhatsApp → Configuración de la API → <b>Agregar número</b> y verificarlo con el código SMS.</li>
+        <li>WhatsApp Manager → <b>Ajustes de pago</b>: agregar una tarjeta.</li>
+        <li>Portafolio → Usuarios del sistema: crear usuario <b>Administrador</b>, asignarle la app y la cuenta de WhatsApp, y <b>generar el token</b> (vencimiento "Nunca", permisos whatsapp_business_messaging y whatsapp_business_management).</li>
+        <li>Iniciar la <b>verificación de la empresa</b> (Centro de seguridad) con NIT y factura de servicios.</li>
+    </ol>
+    <p class="small mb-0">Luego cargue los datos con <code>scripts\configurar-whatsapp.ps1</code> (opción 1 = Meta) y reinicie el sistema.</p>
+</div>
+
+<div class="card p-3 mb-3">
+    <h5>Paso 2 · Datos cargados en el sistema</h5>
+    <div class="row small">
+        <div class="col-md-4">@Marca(!string.IsNullOrEmpty(Model.O.PhoneNumberId)) Phone Number ID</div>
+        <div class="col-md-4">@Marca(!string.IsNullOrEmpty(Model.O.AccessToken)) Access Token permanente</div>
+        <div class="col-md-4">@Marca(!string.IsNullOrEmpty(Model.O.BusinessAccountId)) WhatsApp Business Account ID</div>
+        <div class="col-md-4">@Marca(!string.IsNullOrEmpty(Model.O.AppId)) App ID</div>
+        <div class="col-md-4">@Marca(!string.IsNullOrEmpty(Model.O.AppSecret)) App Secret</div>
+        <div class="col-md-4">@Marca(!string.IsNullOrEmpty(Model.O.VerifyToken)) Verify Token</div>
+    </div>
+    @if (!Model.O.EsMeta) { <div class="alert alert-warning small mt-2 mb-0">El proveedor activo es TextMeBot. Elija "1 = Meta" en el script para usar este asistente.</div> }
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-lg-5">
+        <form method="post" asp-page-handler="Registrar" class="card p-3 h-100">
+            <h5>Paso 3 · Registrar el número en la API</h5>
+            <p class="small text-muted">Necesario una sola vez para números reales (el número de prueba de Meta ya viene registrado).
+                Elija un PIN de 6 dígitos y <b>anótelo</b>: queda como verificación en dos pasos del número.</p>
+            <div class="d-flex gap-2">
+                <input asp-for="Pin" class="form-control" maxlength="6" inputmode="numeric" placeholder="PIN de 6 dígitos" />
+                <button class="btn btn-primary text-nowrap" @(Model.DatosBasicos ? "" : "disabled")>Registrar número</button>
+            </div>
+        </form>
+    </div>
+    <div class="col-lg-7">
+        <form method="post" asp-page-handler="Perfil" class="card p-3 h-100">
+            <h5>Paso 4 · Perfil de empresa en WhatsApp</h5>
+            <div class="row g-2 small">
+                <div class="col-12"><label class="form-label mb-0">Info (máx. 139 caracteres)</label><input asp-for="Perfil.Acerca" class="form-control form-control-sm" maxlength="139" /></div>
+                <div class="col-12"><label class="form-label mb-0">Descripción</label><textarea asp-for="Perfil.Descripcion" class="form-control form-control-sm" rows="2" maxlength="512"></textarea></div>
+                <div class="col-md-4"><label class="form-label mb-0">Correo</label><input asp-for="Perfil.Email" class="form-control form-control-sm" /></div>
+                <div class="col-md-4"><label class="form-label mb-0">Sitio web</label><input asp-for="Perfil.Web" class="form-control form-control-sm" /></div>
+                <div class="col-md-4"><label class="form-label mb-0">Dirección</label><input asp-for="Perfil.Direccion" class="form-control form-control-sm" /></div>
+            </div>
+            <div class="mt-2"><button class="btn btn-primary" @(Model.DatosBasicos ? "" : "disabled")>Guardar perfil en WhatsApp</button></div>
+        </form>
+    </div>
+</div>
+
+<form method="post" asp-page-handler="Plantillas" class="card p-3 mb-3">
+    <h5>Paso 5 · Plantillas de las campañas</h5>
+    <p class="small text-muted">Se crean en Meta como <b>Marketing</b>, con los textos del menú Plantillas y los botones "Sí, me interesa" / "Ahora no".
+        Meta las revisa (de minutos a 24 h). Solo se crean las que no existen.</p>
+    <table class="table table-sm small">
+        <thead><tr><th>Nombre en Meta</th><th>Texto que se enviará a revisión</th><th>Estado</th></tr></thead>
+        <tbody>
+        @foreach (var (p, estado) in Model.Plantillas)
+        {
+            string texto;
+            try { texto = TiBolivia.Prospeccion.Services.ConfiguradorMeta.ConvertirAPlantillaMeta(p).Texto; }
+            catch (InvalidOperationException ex) { texto = "⚠ " + ex.Message; }
+            <tr>
+                <td><code>@p.WhatsAppPlantillaMeta</code><div class="text-muted">@p.Nombre</div></td>
+                <td>@texto</td>
+                <td>@if (estado != "") { <span class="badge bg-@ColorEstado(estado)">@estado</span> } else { <span class="text-muted">—</span> }</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+    <div><button class="btn btn-primary" @(Model.DatosPlantillas ? "" : "disabled")>Crear en Meta las plantillas que faltan</button></div>
+</form>
+
+<form method="post" asp-page-handler="Webhook" class="card p-3 mb-3">
+    <h5>Paso 6 · Conectar el webhook (respuestas de los prospectos)</h5>
+    <p class="small text-muted">El sistema debe estar accesible desde internet. En su PC abra el túnel con
+        <code>cloudflared tunnel --url http://localhost:5179</code> y pegue aquí la dirección <code>https://...trycloudflare.com</code>.
+        En el servidor final use su dominio (ej. https://prospectos.tibolivia.com).</p>
+    <div class="d-flex gap-2">
+        <input asp-for="UrlPublica" class="form-control" placeholder="https://..." />
+        <button class="btn btn-primary text-nowrap" @(Model.DatosWebhook ? "" : "disabled")>Conectar webhook</button>
+    </div>
+    @if (!Model.DatosWebhook) { <p class="small text-danger mt-2 mb-0">Requiere App ID, App Secret y Verify Token (Paso 2).</p> }
+</form>
+
+<div class="card p-3">
+    <h5>Paso 7 · Probar</h5>
+    <p class="small mb-0">Vaya a <a asp-page="WhatsApp">WhatsApp</a>: pulse <b>Verificar ahora</b> y envíe un mensaje de prueba a su celular.
+        Cuando las plantillas estén <b>APPROVED</b>, active las campañas.</p>
+</div>

@@ -67,6 +67,8 @@ public class WhatsAppOptions
     public string? PhoneNumberId { get; set; }
     /// <summary>Identificador de la cuenta de WhatsApp Business (WABA); permite consultar las plantillas.</summary>
     public string? BusinessAccountId { get; set; }
+    /// <summary>Identificador de la app en developers.facebook.com (solo para conectar el webhook automáticamente).</summary>
+    public string? AppId { get; set; }
     public string? AccessToken { get; set; }
     /// <summary>Token que se configura en Meta para verificar el webhook.</summary>
     public string? VerifyToken { get; set; }

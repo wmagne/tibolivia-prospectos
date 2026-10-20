@@ -90,8 +90,12 @@ Con el sistema detenido, ejecute el asistente en PowerShell:
 powershell -ExecutionPolicy Bypass -File D:\Waldo\TIBolivia\SistemaProspectos\scripts\configurar-whatsapp.ps1
 ```
 
-Le pedirá **Phone Number ID**, **WhatsApp Business Account ID**, **Access Token**, **App Secret**, **Verify Token** y la URL del chatbot.
+Le pedirá **Phone Number ID**, **WhatsApp Business Account ID**, **Access Token**, **App ID**, **App Secret**, **Verify Token** y la URL del chatbot.
 Los datos se guardan con `user-secrets`: quedan fuera del proyecto y no se suben a GitHub. Luego ejecute `dotnet run`.
+
+En el menú **Asistente Meta** (solo administradores) el sistema hace por usted, con un botón cada uno:
+registrar el número en la API (PIN de 6 dígitos), completar el perfil de empresa, **crear las plantillas de las campañas**
+en Meta y conectar el webhook. La parte manual (cuenta, app, verificar el número por SMS, pago y token) está listada en el Paso 1 de esa pantalla.
 
 En el menú **WhatsApp** (solo administradores) puede:
 1. Ver qué datos faltan y la **URL del webhook** que debe poner en Meta.
