@@ -13,10 +13,11 @@
     <div class="row g-2">
         <div class="col-md-3"><input asp-for="Buscar" class="form-control" placeholder="Empresa, contacto, correo o teléfono" /></div>
         <div class="col-md-2">
-            <select asp-for="Estado" asp-items="Html.GetEnumSelectList<EstadoProspecto>()" class="form-select"><option value="">Todos los estados</option></select>
+            <select asp-for="Estado" asp-items="Etiquetas.Estados(Model.Estado)" class="form-select"><option value="">Todos los estados</option></select>
         </div>
-        <div class="col-md-2"><input asp-for="Ciudad" class="form-control" placeholder="Ciudad" /></div>
-        <div class="col-md-2"><input asp-for="Rubro" class="form-control" placeholder="Rubro" /></div>
+        <div class="col-md-1"><select asp-for="Prioridad" class="form-select"><option value="">Prior.</option><option>A</option><option>B</option><option>C</option></select></div>
+        <div class="col-md-3"><select asp-for="Rubro" class="form-select"><option value="">Todos los rubros</option>
+            @foreach (var r in Model.Rubros) { <option value="@r" selected="@(r == Model.Rubro)">@r</option> }</select></div>
         <div class="col-md-2">
             <select asp-for="AsignadoA" asp-items="Model.Usuarios" class="form-select">
                 <option value="">Cualquier comercial</option><option value="-">Sin asignar</option>
@@ -24,12 +25,17 @@
         </div>
         <div class="col-md-1"><button class="btn btn-secondary w-100">Filtrar</button></div>
     </div>
-    <div class="form-check mt-2"><input asp-for="Mios" class="form-check-input" onchange="this.form.submit()" /><label class="form-check-label" asp-for="Mios">Solo mis prospectos</label></div>
+    <div class="d-flex gap-4 mt-2">
+        <div class="form-check"><input asp-for="Mios" class="form-check-input" onchange="this.form.submit()" /><label class="form-check-label" asp-for="Mios">Solo mis prospectos</label></div>
+        <div class="form-check"><input asp-for="PorVerificar" class="form-check-input" onchange="this.form.submit()" /><label class="form-check-label" asp-for="PorVerificar">Solo datos por verificar</label></div>
+    </div>
 </form>
 
 <form method="post" id="formLote">
     <input type="hidden" name="Buscar" value="@Model.Buscar" />
     <input type="hidden" name="Estado" value="@Model.Estado" />
+    <input type="hidden" name="Rubro" value="@Model.Rubro" />
+    <input type="hidden" name="Prioridad" value="@Model.Prioridad" />
     <div class="card p-3">
         <div class="row g-2 mb-2">
             <div class="col-md-4 d-flex gap-2">
@@ -45,22 +51,23 @@
         <table class="table table-hover table-sm mb-0">
             <thead><tr>
                 <th><input type="checkbox" class="form-check-input" onclick="document.querySelectorAll('input[name=seleccion]').forEach(c => c.checked = this.checked)" /></th>
-                <th>Empresa</th><th>Contacto</th><th>Correo</th><th>WhatsApp</th><th>Ciudad</th><th>Rubro</th><th>Estado</th><th>Comercial</th>
+                <th>P</th><th>Empresa</th><th>Correo</th><th>WhatsApp</th><th>Rubro</th><th>Qué ofrecerle</th><th>Estado</th><th>Comercial</th>
             </tr></thead>
             <tbody>
             @foreach (var p in Model.Prospectos)
             {
                 <tr>
                     <td><input type="checkbox" class="form-check-input" name="seleccion" value="@p.Id" /></td>
-                    <td><a asp-page="Detalle" asp-route-id="@p.Id">@p.Empresa</a></td>
-                    <td>@p.NombreContacto <span class="text-muted small">@p.Cargo</span></td>
+                    <td>@if (p.Prioridad is not null) { <span class="badge bg-@Etiquetas.ColorPrioridad(p.Prioridad)">@p.Prioridad</span> }</td>
+                    <td><a asp-page="Detalle" asp-route-id="@p.Id">@p.Empresa</a> @if (p.DatosPorVerificar) { <span title="Datos por verificar">⚠</span> }
+                        <div class="small text-muted">@p.NombreContacto</div></td>
                     <td>@p.Email @if (p.BajaEmail) { <span class="badge bg-dark">baja</span> }</td>
                     <td>@p.Telefono
                         @if (p.BajaWhatsApp) { <span class="badge bg-dark">baja</span> }
                         else if (!p.ConsentimientoWhatsApp && p.Telefono != null) { <span class="badge bg-light text-dark" title="Sin consentimiento de WhatsApp">sin opt-in</span> }
                     </td>
-                    <td>@p.Ciudad</td>
-                    <td>@p.Rubro</td>
+                    <td class="small">@p.Rubro</td>
+                    <td class="small">@p.Necesidad</td>
                     <td><span class="badge bg-@Etiquetas.Color(p.Estado)">@Etiquetas.Texto(p.Estado)</span></td>
                     <td>@(p.AsignadoA?.NombreCompleto ?? "—")</td>
                 </tr>
@@ -78,7 +85,8 @@
     {
         <li class="page-item @(i == Model.Pagina ? "active" : "")">
             <a class="page-link" asp-route-pagina="@i" asp-route-buscar="@Model.Buscar" asp-route-estado="@Model.Estado"
-               asp-route-ciudad="@Model.Ciudad" asp-route-rubro="@Model.Rubro" asp-route-asignadoA="@Model.AsignadoA" asp-route-mios="@Model.Mios">@i</a>
+               asp-route-ciudad="@Model.Ciudad" asp-route-rubro="@Model.Rubro" asp-route-asignadoA="@Model.AsignadoA" asp-route-mios="@Model.Mios"
+               asp-route-prioridad="@Model.Prioridad" asp-route-porVerificar="@Model.PorVerificar">@i</a>
         </li>
     }
     </ul></nav>

@@ -7,7 +7,7 @@ public static class Etiquetas
 {
     public static string Texto(EstadoProspecto e) => e switch
     {
-        EstadoProspecto.ReunionAgendada => "Reunión agendada",
+        EstadoProspecto.ReunionAgendada => "Diagnóstico agendado",
         EstadoProspecto.PropuestaEnviada => "Propuesta enviada",
         EstadoProspecto.NoContactar => "No contactar",
         _ => e.ToString(),
@@ -40,5 +40,11 @@ public static class Etiquetas
         _ => "secondary",
     };
 
-    public static string Texto(Canal c) => c == Canal.Email ? "Correo" : "WhatsApp";
+    public static string Texto(Canal c) => c switch { Canal.Email => "Correo", Canal.WhatsApp => "WhatsApp", _ => "Tarea manual" };
+
+    public static string ColorPrioridad(string? p) => p switch { "A" => "danger", "B" => "warning text-dark", "C" => "secondary", _ => "light text-dark" };
+
+    /// <summary>Lista de estados con su texto, para los select (los enum muestran el nombre interno).</summary>
+    public static IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> Estados(EstadoProspecto? seleccionado = null) =>
+        Enum.GetValues<EstadoProspecto>().Select(e => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem(Texto(e), ((int)e).ToString(), e == seleccionado));
 }

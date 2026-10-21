@@ -2,7 +2,9 @@
 @model TiBolivia.Prospeccion.Pages.Prospectos.DetalleModel
 @{ var p = Model.Prospecto; ViewData["Title"] = p.Empresa; }
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="mb-0">@p.Empresa <span class="badge bg-@Etiquetas.Color(p.Estado) fs-6 align-middle">@Etiquetas.Texto(p.Estado)</span></h3>
+    <h3 class="mb-0">@p.Empresa <span class="badge bg-@Etiquetas.Color(p.Estado) fs-6 align-middle">@Etiquetas.Texto(p.Estado)</span>
+        @if (p.Prioridad is not null) { <span class="badge bg-@Etiquetas.ColorPrioridad(p.Prioridad) fs-6 align-middle">Prioridad @p.Prioridad</span> }
+        @if (p.DatosPorVerificar) { <span class="badge bg-warning text-dark fs-6 align-middle">Datos por verificar</span> }</h3>
     <div><a asp-page="Editar" asp-route-id="@p.Id" class="btn btn-outline-primary">Editar</a> <a asp-page="Index" class="btn btn-link">Volver</a></div>
 </div>
 <div class="row g-3">
@@ -15,11 +17,49 @@
                 <dt class="col-4">Ciudad</dt><dd class="col-8">@p.Ciudad</dd>
                 <dt class="col-4">Rubro</dt><dd class="col-8">@p.Rubro</dd>
                 <dt class="col-4">Sitio web</dt><dd class="col-8">@p.SitioWeb</dd>
+                <dt class="col-4">Dirección</dt><dd class="col-8">@p.Direccion</dd>
+                <dt class="col-4">Qué ofrecerle</dt><dd class="col-8"><b>@p.Necesidad</b></dd>
+                <dt class="col-4">Valor estimado</dt><dd class="col-8">@(p.ValorEstimado is { } v ? $"Bs {v:N0}" : "—")</dd>
                 <dt class="col-4">Origen</dt><dd class="col-8">@p.Origen</dd>
+                <dt class="col-4">Fuente</dt><dd class="col-8 text-break">@p.Fuente</dd>
                 <dt class="col-4">Comercial</dt><dd class="col-8">@(p.AsignadoA?.NombreCompleto ?? "—")</dd>
             </dl>
             @if (!string.IsNullOrWhiteSpace(p.Notas)) { <hr /><div class="small" style="white-space:pre-wrap">@p.Notas</div> }
         </div>
+
+        <div class="card p-3 mb-3 border-primary">
+            <h6>Próxima acción</h6>
+            @if (p.ProximaAccion is not null)
+            {
+                var vencida = p.FechaProximaAccion < DateTime.UtcNow;
+                <div class="mb-2"><b>@p.ProximaAccion</b>
+                    <span class="badge bg-@(vencida ? "danger" : "info")">@p.FechaProximaAccion?.ToLocalTime().ToString("dd/MM/yyyy")</span></div>
+            }
+            <form method="post" asp-page-handler="Accion" class="row g-2">
+                <div class="col-12"><input name="accion" class="form-control form-control-sm" placeholder="Ej. Llamar a gerencia, enviar propuesta" /></div>
+                <div class="col-6"><input name="fecha" type="date" class="form-control form-control-sm" value="@Fechas.HoyBolivia.AddDays(1).ToString("yyyy-MM-dd")" /></div>
+                <div class="col-6"><input name="valor" type="number" step="0.01" class="form-control form-control-sm" placeholder="Valor Bs (opcional)" /></div>
+                <div class="col-12 d-flex gap-2">
+                    @if (p.ProximaAccion is not null) { <button name="completar" value="true" class="btn btn-sm btn-success">Hecho y agendar la siguiente</button> }
+                    else { <button class="btn btn-sm btn-primary">Agendar</button> }
+                </div>
+            </form>
+        </div>
+
+        @if (Model.EnlaceWhatsApp is not null && !p.BajaWhatsApp)
+        {
+            <div class="card p-3 mb-3">
+                <h6>Escribir por WhatsApp (desde su celular)</h6>
+                <p class="small text-muted mb-2">Mensaje personalizado, uno por empresa. Se abre WhatsApp con el texto listo; revíselo y envíelo.</p>
+                <form method="post" asp-page-handler="WhatsAppManual">
+                    <textarea name="texto" id="textoWa" class="form-control form-control-sm mb-2" rows="5">@Model.TextoWhatsAppSugerido</textarea>
+                    <div class="d-flex gap-2">
+                        <a id="enlaceWa" class="btn btn-sm btn-success" target="_blank" href="@Model.EnlaceWhatsApp">Abrir en WhatsApp</a>
+                        <button class="btn btn-sm btn-outline-secondary">Registrar que lo envié</button>
+                    </div>
+                </form>
+            </div>
+        }
 
         <div class="card p-3 mb-3">
             <h6>Campañas</h6>
@@ -70,7 +110,7 @@
             <form method="post" asp-page-handler="Interaccion" class="row g-2">
                 <div class="col-md-2"><select name="tipo" asp-items="Html.GetEnumSelectList<TipoInteraccion>()" class="form-select"></select></div>
                 <div class="col-md-6"><input name="detalle" class="form-control" placeholder="Registrar llamada, reunión o nota..." /></div>
-                <div class="col-md-2"><select name="nuevoEstado" asp-items="Html.GetEnumSelectList<EstadoProspecto>()" class="form-select"><option value="">(estado igual)</option></select></div>
+                <div class="col-md-2"><select name="nuevoEstado" asp-items="Etiquetas.Estados()" class="form-select"><option value="">(estado igual)</option></select></div>
                 <div class="col-md-2"><button class="btn btn-primary w-100">Guardar</button></div>
             </form>
         </div>
@@ -95,3 +135,11 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+<script>
+    // Mantiene el enlace de WhatsApp al día si el comercial edita el texto sugerido.
+    const t = document.getElementById('textoWa'), a = document.getElementById('enlaceWa');
+    if (t && a) t.addEventListener('input', () => { a.href = a.href.split('?')[0] + '?text=' + encodeURIComponent(t.value); });
+</script>
+}

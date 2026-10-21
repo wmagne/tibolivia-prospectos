@@ -187,6 +187,8 @@ git push
 
 ## 4. Uso diario (equipo comercial)
 
+**Empiece aquí: [docs/PUESTA-EN-MARCHA.md](docs/PUESTA-EN-MARCHA.md)** (prospectos cargados, campañas, tareas y metas). Análisis de mejoras: [docs/ANALISIS-COMERCIAL.md](docs/ANALISIS-COMERCIAL.md).
+
 Vea **[docs/CAMPANAS.md](docs/CAMPANAS.md)**: las 3 campañas comerciales incluidas, los textos de WhatsApp para Meta y cómo lanzarlas.
 
 1. **Importar** la lista de prospectos (Prospectos → Importar CSV; ver `docs/prospectos_ejemplo.csv`).

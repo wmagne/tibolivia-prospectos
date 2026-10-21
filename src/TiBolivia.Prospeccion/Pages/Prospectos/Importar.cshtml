@@ -5,7 +5,8 @@
 <div class="card p-4">
     <p>El archivo debe tener encabezados (separador coma o punto y coma):</p>
     <code class="mb-2">@ImportarModel.Encabezados</code>
-    <p class="small text-muted">Solo <b>Empresa</b> y <b>Email</b> o <b>Telefono</b> son obligatorios. Los teléfonos bolivianos de 8 dígitos reciben el prefijo 591.
+    <p class="small text-muted">Solo <b>Empresa</b> y <b>Email</b> o <b>Telefono</b> son obligatorios. <b>Prioridad</b>: A, B o C.
+        <b>Necesidad</b>: qué ofrecerle. <b>Verificar</b> = "si" si hay datos por confirmar. Los teléfonos bolivianos de 8 dígitos reciben el prefijo 591.
         Los duplicados (mismo correo o teléfono) se omiten. <b>ConsentimientoWhatsApp</b> = "si" solo si la persona aceptó recibir WhatsApp.</p>
     <p><a asp-page-handler="Plantilla">Descargar plantilla CSV</a></p>
     <form method="post" enctype="multipart/form-data">

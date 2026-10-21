@@ -1,0 +1,42 @@
+@page
+@model TiBolivia.Prospeccion.Pages.Tareas.IndexModel
+@{ ViewData["Title"] = "Mis tareas"; }
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Tareas comerciales</h3>
+    <form method="get" class="d-flex gap-2">
+        <select asp-for="Comercial" asp-items="Model.Usuarios" class="form-select" onchange="this.form.submit()"><option value="*">Todo el equipo</option></select>
+    </form>
+</div>
+<p class="text-muted small">Llamadas, WhatsApp personalizados y seguimientos. Las campañas agregan tareas solas (por ejemplo "Llamar a gerencia" el día 14).
+    Abra la empresa, haga la acción y pulse <b>"Hecho y agendar la siguiente"</b>.</p>
+
+@{
+    var grupos = new[] { ("Vencidas", Model.Vencidas, "danger"), ("Para hoy", Model.Hoy, "primary"), ("Próximos 7 días", Model.Proximas, "secondary") };
+}
+@foreach (var (titulo, lista, color) in grupos)
+{
+    <div class="card p-3 mb-3">
+        <h5 class="text-@color">@titulo <span class="badge bg-@color">@lista.Count</span></h5>
+        @if (lista.Count == 0) { <p class="text-muted small mb-0">Nada pendiente.</p> }
+        else
+        {
+            <table class="table table-sm mb-0">
+                <thead><tr><th>Fecha</th><th>Empresa</th><th>P</th><th>Acción</th><th>Teléfono</th><th>Comercial</th><th></th></tr></thead>
+                <tbody>
+                @foreach (var p in lista)
+                {
+                    <tr>
+                        <td class="text-nowrap small">@Fechas.ABolivia(p.FechaProximaAccion!.Value).ToString("dd/MM")</td>
+                        <td><a asp-page="/Prospectos/Detalle" asp-route-id="@p.Id">@p.Empresa</a> <div class="small text-muted">@p.Necesidad</div></td>
+                        <td>@if (p.Prioridad is not null) { <span class="badge bg-@Etiquetas.ColorPrioridad(p.Prioridad)">@p.Prioridad</span> }</td>
+                        <td>@p.ProximaAccion</td>
+                        <td class="text-nowrap small">@if (p.Telefono is not null) { <a href="tel:+@p.Telefono">+@p.Telefono</a> }</td>
+                        <td class="small">@p.AsignadoA?.NombreCompleto</td>
+                        <td><form method="post" asp-page-handler="Postergar" asp-route-id="@p.Id" asp-route-comercial="@Model.Comercial"><button class="btn btn-sm btn-link">+1 día</button></form></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+    </div>
+}

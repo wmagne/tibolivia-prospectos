@@ -1,0 +1,43 @@
+@page
+@model TiBolivia.Prospeccion.Pages.Embudo.IndexModel
+@{ ViewData["Title"] = "Embudo de ventas"; }
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h3 class="mb-0">Embudo de ventas</h3>
+    <form method="get" class="d-flex gap-2">
+        <select asp-for="Comercial" asp-items="Model.Usuarios" class="form-select form-select-sm"><option value="">Todo el equipo</option></select>
+        <select asp-for="Rubro" class="form-select form-select-sm"><option value="">Todos los rubros</option>
+            @foreach (var r in Model.Rubros) { <option value="@r" selected="@(r == Model.Rubro)">@r</option> }</select>
+        <select asp-for="Prioridad" class="form-select form-select-sm"><option value="">Toda prioridad</option><option>A</option><option>B</option><option>C</option></select>
+        <button class="btn btn-sm btn-secondary">Filtrar</button>
+    </form>
+</div>
+<p class="small text-muted">Ordenado por prioridad y valor. Cambie la etapa desde cada tarjeta. Perdidos: @Model.Perdidos.</p>
+<div class="d-flex gap-2 overflow-auto pb-2">
+@foreach (var etapa in TiBolivia.Prospeccion.Pages.Embudo.IndexModel.Etapas)
+{
+    var lista = Model.Columnas[etapa];
+    var total = lista.Sum(p => p.ValorEstimado ?? 0);
+    <div class="flex-shrink-0" style="width:250px">
+        <div class="card p-2 mb-2 bg-@Etiquetas.Color(etapa) bg-opacity-25">
+            <b>@Etiquetas.Texto(etapa)</b>
+            <div class="small">@lista.Count empresas · Bs @total.ToString("N0")</div>
+        </div>
+        @foreach (var p in lista.Take(60))
+        {
+            <div class="card p-2 mb-2 small">
+                <div class="d-flex justify-content-between">
+                    <a asp-page="/Prospectos/Detalle" asp-route-id="@p.Id" class="fw-semibold">@p.Empresa</a>
+                    @if (p.Prioridad is not null) { <span class="badge bg-@Etiquetas.ColorPrioridad(p.Prioridad)">@p.Prioridad</span> }
+                </div>
+                <div class="text-muted">@p.Rubro</div>
+                @if (p.ValorEstimado is { } v) { <div>Bs @v.ToString("N0")</div> }
+                @if (p.ProximaAccion is not null) { <div class="text-primary">⏰ @p.ProximaAccion</div> }
+                <form method="post" asp-page-handler="Mover" asp-route-id="@p.Id" asp-route-comercial="@Model.Comercial" asp-route-rubro="@Model.Rubro" asp-route-prioridad="@Model.Prioridad" class="mt-1">
+                    <select name="estado" class="form-select form-select-sm" onchange="this.form.submit()" asp-items="Etiquetas.Estados(p.Estado)"></select>
+                </form>
+            </div>
+        }
+        @if (lista.Count > 60) { <div class="small text-muted">y @(lista.Count - 60) más (use los filtros)</div> }
+    </div>
+}
+</div>

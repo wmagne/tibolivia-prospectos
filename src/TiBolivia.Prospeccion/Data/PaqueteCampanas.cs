@@ -173,12 +173,131 @@ public static class PaqueteCampanas
                     """)),
             ]);
 
+        await CampanasSantaCruzAsync(db);
         await db.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Campañas basadas en la estrategia comercial de TIBolivia (documento "Base de prospectos y estrategia comercial"):
+    /// WhatsApp personalizado (tarea manual) → correo con propuesta → seguimiento → llamada → cierre.
+    /// </summary>
+    private static async Task CampanasSantaCruzAsync(AppDbContext db)
+    {
+        var apps = await ServicioAsync(db, "Apps móviles y CRM",
+            "Apps de pedidos, reservas o citas y CRM para ordenar clientes y ventas que hoy llegan por WhatsApp o Excel.");
+        var correo = await ServicioAsync(db, "Correo corporativo con dominio propio",
+            "Correo profesional con el dominio de su empresa (nombre@suempresa.com), configurado y administrado por TIBolivia.");
+        await ServicioAsync(db, "Outsourcing de sistemas (área de TI)",
+            "TIBolivia como el área de sistemas de su empresa por una cuota mensual fija: soporte, correo, web y desarrollo.");
+        var logistica = await ServicioAsync(db, "Sistemas de logística",
+            "Control de flota, rastreo de envíos con portal para clientes, almacenes e inventario, rutas y despacho.");
+
+        const string firma = "<p>Saludos cordiales,<br>{{Comercial}} · TIBolivia<br>{{EmailComercial}} · {{TelefonoComercial}}</p>";
+        var waPresentacion = await TareaAsync(db, "Santa Cruz 1 · WhatsApp personalizado (tarea)",
+            "Enviar WhatsApp de presentación a {{Empresa}}",
+            "Buenos días, le saluda {{Comercial}} de TIBolivia, empresa cruceña de desarrollo de software. Ayudamos a empresas como {{Empresa}} con {{Necesidad}}. ¿Le puedo enviar una propuesta corta o agendar 30 minutos de diagnóstico sin costo?");
+        var waSeguimiento = await TareaAsync(db, "Santa Cruz 3 · WhatsApp de seguimiento (tarea)",
+            "WhatsApp de seguimiento a {{Empresa}} con un dato útil",
+            "Hola, le escribo nuevamente de TIBolivia. En empresas de su rubro, gran parte de los pedidos y consultas llegan por WhatsApp y se pierden en el chat; con {{Necesidad}} quedan ordenados y medibles. ¿Le muestro en 30 minutos cómo funcionaría en {{Empresa}}?");
+        var llamada = await TareaAsync(db, "Santa Cruz 4 · Llamada a gerencia (tarea)",
+            "Llamar a {{Empresa}} y pedir hablar con gerencia o administración",
+            "Guion: \"Buenos días, soy {{Comercial}} de TIBolivia. Les enviamos una propuesta sobre {{Necesidad}}. ¿Con quién puedo coordinar un diagnóstico gratuito de 30 minutos?\" Registre el resultado y agende el siguiente paso.");
+
+        await CampanaAsync(db, "Santa Cruz: diagnóstico gratuito (estrategia comercial)",
+            "Cadencia de 3 semanas del plan comercial: WhatsApp personalizado, correo con propuesta, seguimiento, llamada y cierre. Para la base de Santa Cruz.",
+            apps,
+            [
+                new(0, waPresentacion),
+                new(1, await CorreoAsync(db, "Santa Cruz 2 · Correo con propuesta",
+                    "{{Empresa}}: menos tiempo en WhatsApp y Excel, más ventas",
+                    """
+                    <p>Estimados de {{Empresa}}:</p>
+                    <p>Soy {{Comercial}}, de <b>TIBolivia</b> (Santa Cruz). Desarrollamos aplicaciones móviles, sistemas a medida y CRM,
+                    administramos correo corporativo con dominio propio y podemos ser el área de sistemas de su empresa por una cuota mensual fija.</p>
+                    <p>Para {{Empresa}} vemos una oportunidad concreta: <b>{{Necesidad}}</b>.</p>
+                    <p>Les ofrezco un <b>diagnóstico gratuito de 30 minutos</b>, presencial o por videollamada, para identificar qué procesos conviene automatizar primero.
+                    Puede responder este correo con el día y la hora que le acomoden.</p>
+                    """ + firma)),
+                new(6, waSeguimiento),
+                new(7, llamada),
+                new(7, await CorreoAsync(db, "Santa Cruz 5 · Cierre del ciclo",
+                    "¿Lo retomamos más adelante?",
+                    """
+                    <p>Estimados de {{Empresa}}:</p>
+                    <p>Este es mi último mensaje por ahora para no llenar su bandeja. Si más adelante quieren revisar {{Necesidad}},
+                    respondan este correo y coordinamos el diagnóstico gratuito.</p>
+                    """ + firma)),
+            ]);
+
+        await CampanaAsync(db, "Logística: control de flota, envíos y almacenes",
+            "Para transporte, courier, agencias aduaneras, almacenes y distribuidoras. WhatsApp personalizado, 2 correos, llamada y cierre.",
+            logistica,
+            [
+                new(0, waPresentacion),
+                new(1, await CorreoAsync(db, "Logística 2 · Presentación",
+                    "{{Empresa}}: sus clientes preguntan \"¿dónde está mi envío?\"",
+                    """
+                    <p>Estimados de {{Empresa}}:</p>
+                    <p>Soy {{Comercial}}, de <b>TIBolivia</b>. Desarrollamos <b>sistemas de logística a medida</b> para empresas de Santa Cruz:</p>
+                    <ul>
+                      <li><b>Rastreo de envíos</b> con portal o app para que el cliente consulte el estado sin llamar.</li>
+                      <li><b>Control de flota</b>: viajes, choferes, mantenimiento y combustible.</li>
+                      <li><b>Almacenes e inventario</b>: entradas, salidas y ubicación de la mercadería.</li>
+                      <li><b>Despacho y rutas</b> con guías y comprobantes digitales.</li>
+                    </ul>
+                    <p>Para {{Empresa}} pensamos en: <b>{{Necesidad}}</b>. ¿Coordinamos un diagnóstico gratuito de 30 minutos?</p>
+                    """ + firma)),
+                new(5, await CorreoAsync(db, "Logística 3 · Cómo trabajamos",
+                    "Un sistema de logística por etapas, sin parar su operación",
+                    """
+                    <p>Estimados de {{Empresa}}:</p>
+                    <p>Sabemos que en logística no se puede detener la operación para cambiar de sistema. Por eso trabajamos <b>por etapas</b>:
+                    primero lo que más tiempo les quita (por ejemplo, el rastreo para clientes), con capacitación al personal y soporte local en Santa Cruz.</p>
+                    <p>¿Les parece si conversamos 30 minutos esta semana?</p>
+                    """ + firma)),
+                new(4, llamada),
+                new(7, await CorreoAsync(db, "Logística 4 · Cierre del ciclo",
+                    "Quedamos atentos, {{Empresa}}",
+                    """
+                    <p>Estimados de {{Empresa}}:</p>
+                    <p>Cierro aquí mis mensajes para no molestarles. Cuando quieran ordenar envíos, flota o almacenes, respondan este correo y les atendemos.</p>
+                    """ + firma)),
+            ]);
+
+        await CampanaAsync(db, "Correo corporativo (empresas que usan Gmail o Hotmail)",
+            "Venta rápida de ticket bajo para empresas que atienden con correo gratuito. Puerta de entrada a soporte, web y CRM.",
+            correo,
+            [
+                new(0, await CorreoAsync(db, "Correo corporativo 1 · Presentación",
+                    "{{Empresa}}: su correo con el dominio de su empresa",
+                    """
+                    <p>Estimados de {{Empresa}}:</p>
+                    <p>Vimos que atienden a sus clientes con un correo gratuito (Gmail o Hotmail). Un correo con su propio dominio
+                    (por ejemplo, <b>ventas@suempresa.com</b>) transmite confianza, evita que sus mensajes lleguen a spam y deja las cuentas a nombre de la empresa,
+                    no de una persona.</p>
+                    <p>En <b>TIBolivia</b> lo configuramos y administramos por ustedes, incluida la migración de los correos actuales.
+                    ¿Les envío una cotización?</p>
+                    """ + firma)),
+                new(2, waPresentacion),
+                new(4, await CorreoAsync(db, "Correo corporativo 2 · Seguimiento",
+                    "¿Le preparamos la cotización del correo corporativo?",
+                    """
+                    <p>Estimados de {{Empresa}}:</p>
+                    <p>Solo para saber si les interesa la cotización del correo con su dominio. Si ya tienen dominio web, el cambio se hace en pocos días
+                    y sin perder sus correos actuales.</p>
+                    """ + firma)),
+                new(5, llamada),
+            ]);
+    }
+
+    private static async Task<Plantilla> TareaAsync(AppDbContext db, string nombre, string titulo, string texto) =>
+        await db.Plantillas.FirstOrDefaultAsync(x => x.Nombre == nombre)
+        ?? db.Plantillas.Local.FirstOrDefault(x => x.Nombre == nombre)
+        ?? db.Plantillas.Add(new Plantilla { Nombre = nombre, Canal = Canal.Tarea, Asunto = titulo, Cuerpo = texto }).Entity;
+
     private static async Task<Servicio> ServicioAsync(AppDbContext db, string nombre, string descripcion)
     {
-        var s = await db.Servicios.FirstOrDefaultAsync(x => x.Nombre == nombre);
+        var s = await db.Servicios.FirstOrDefaultAsync(x => x.Nombre == nombre) ?? db.Servicios.Local.FirstOrDefault(x => x.Nombre == nombre);
         if (s is not null) return s;
         s = new Servicio { Nombre = nombre, Descripcion = descripcion };
         db.Servicios.Add(s);
@@ -187,6 +306,7 @@ public static class PaqueteCampanas
 
     private static async Task<Plantilla> CorreoAsync(AppDbContext db, string nombre, string asunto, string cuerpo) =>
         await db.Plantillas.FirstOrDefaultAsync(x => x.Nombre == nombre)
+        ?? db.Plantillas.Local.FirstOrDefault(x => x.Nombre == nombre)
         ?? db.Plantillas.Add(new Plantilla { Nombre = nombre, Canal = Canal.Email, Asunto = asunto, Cuerpo = cuerpo }).Entity;
 
     private static async Task<Plantilla> WhatsAppAsync(AppDbContext db, string nombre, string texto, string plantillaMeta, string parametros) =>
@@ -199,7 +319,7 @@ public static class PaqueteCampanas
 
     private static async Task CampanaAsync(AppDbContext db, string nombre, string descripcion, Servicio servicio, PasoDef[] pasos)
     {
-        if (await db.Campanas.AnyAsync(c => c.Nombre == nombre)) return;
+        if (await db.Campanas.AnyAsync(c => c.Nombre == nombre) || db.Campanas.Local.Any(c => c.Nombre == nombre)) return;
         db.Campanas.Add(new Campana
         {
             Nombre = nombre,

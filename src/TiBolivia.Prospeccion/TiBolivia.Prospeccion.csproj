@@ -19,4 +19,9 @@
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Listas de prospectos que se cargan solas la primera vez (ver Data/CargaListas.cs) -->
+    <None Update="Data\Listas\*.csv" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

@@ -14,6 +14,11 @@ public class DetalleModel(AppDbContext db, ServicioInscripciones inscripciones, 
     public Prospecto Prospecto { get; private set; } = null!;
     public List<(DateTime Fecha, string Clase, string Titulo, string? Detalle, string? Badge, string? BadgeColor, string? Error)> Historial { get; private set; } = [];
     public SelectList Campanas { get; private set; } = null!;
+    /// <summary>Texto sugerido para escribir por WhatsApp desde el celular del comercial (enlace wa.me).</summary>
+    public string TextoWhatsAppSugerido { get; private set; } = "";
+    public string? EnlaceWhatsApp => Prospecto.Telefono is null ? null
+        : $"https://wa.me/{Prospecto.Telefono}?text={Uri.EscapeDataString(TextoWhatsAppSugerido)}";
+
     public bool VentanaWhatsAppAbierta => !whatsApp.RequierePlantillasAprobadas || Prospecto.UltimaRespuestaEn > DateTime.UtcNow.AddHours(-24);
 
     public async Task<IActionResult> OnGetAsync(int id)
@@ -40,6 +45,17 @@ public class DetalleModel(AppDbContext db, ServicioInscripciones inscripciones, 
         ];
         Historial = Historial.OrderByDescending(h => h.Fecha).ToList();
 
+        // Si una campaña asignó una tarea, su texto (ya personalizado) es la sugerencia; si no, una presentación corta.
+        var ultimaTarea = p.Interacciones
+            .Where(i => i.Detalle.StartsWith("Tarea de la campaña") && i.Detalle.Split('\n')[0].Contains("WhatsApp", StringComparison.OrdinalIgnoreCase))
+            .MaxBy(i => i.Fecha);
+        TextoWhatsAppSugerido = ultimaTarea?.Detalle.Split('\n', 2) is [_, var texto] && !string.IsNullOrWhiteSpace(texto)
+            ? texto.Trim()
+            : $"Buenos días{(string.IsNullOrEmpty(p.NombreSaludo) ? "" : " " + p.NombreSaludo)}, le saluda {p.AsignadoA?.NombreCompleto ?? "el equipo"} de TIBolivia, " +
+              $"empresa cruceña de desarrollo de software. Ayudamos a empresas como {p.Empresa} con " +
+              $"{(string.IsNullOrWhiteSpace(p.Necesidad) ? "apps móviles, sistemas CRM y correo corporativo con dominio propio" : p.Necesidad.TrimEnd('.').ToLowerInvariant())}. " +
+              "¿Le puedo enviar una propuesta corta o agendar 30 minutos de diagnóstico sin costo?";
+
         var inscritas = p.Inscripciones.Select(i => i.CampanaId).ToList();
         Campanas = new SelectList(await db.Campanas.Where(c => !inscritas.Contains(c.Id)).OrderBy(c => c.Nombre).ToListAsync(), "Id", "Nombre");
         return Page();
@@ -59,6 +75,34 @@ public class DetalleModel(AppDbContext db, ServicioInscripciones inscripciones, 
         }
         p.ActualizadoEn = DateTime.UtcNow;
         await db.SaveChangesAsync();
+        return RedirectToPage(new { id });
+    }
+
+    public async Task<IActionResult> OnPostAccionAsync(int id, string? accion, DateTime? fecha, bool completar, decimal? valor)
+    {
+        var p = await db.Prospectos.FindAsync(id);
+        if (p is null) return NotFound();
+        if (completar && p.ProximaAccion is not null)
+            db.Interacciones.Add(new Interaccion { ProspectoId = id, Tipo = TipoInteraccion.Nota, UsuarioId = UsuarioId, Detalle = "Hecho: " + p.ProximaAccion });
+        p.ProximaAccion = string.IsNullOrWhiteSpace(accion) ? null : accion.Trim();
+        p.FechaProximaAccion = p.ProximaAccion is null ? null : Fechas.InicioDelDiaUtc(fecha ?? Fechas.HoyBolivia);
+        if (valor is not null) p.ValorEstimado = valor;
+        p.ActualizadoEn = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+        return RedirectToPage(new { id });
+    }
+
+    /// <summary>Registra que el comercial escribió por WhatsApp desde su celular y marca al prospecto como contactado.</summary>
+    public async Task<IActionResult> OnPostWhatsAppManualAsync(int id, string texto)
+    {
+        var p = await db.Prospectos.FindAsync(id);
+        if (p is null) return NotFound();
+        db.Mensajes.Add(new Mensaje { ProspectoId = id, Canal = Canal.WhatsApp, Direccion = DireccionMensaje.Saliente, Cuerpo = texto, Estado = EstadoMensaje.Enviado, ProveedorId = "manual-" + Guid.NewGuid().ToString("N") });
+        db.Interacciones.Add(new Interaccion { ProspectoId = id, Tipo = TipoInteraccion.WhatsApp, UsuarioId = UsuarioId, Detalle = "WhatsApp enviado desde el celular del comercial." });
+        if (p.Estado == EstadoProspecto.Nuevo) p.Estado = EstadoProspecto.Contactado;
+        p.ActualizadoEn = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+        TempData["Ok"] = "Contacto por WhatsApp registrado.";
         return RedirectToPage(new { id });
     }
 

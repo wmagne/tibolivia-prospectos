@@ -61,6 +61,13 @@ public class MotorCampanas(
         }
 
         var paso = pasos[i.PasoActual];
+        if (paso.Canal == Canal.Tarea)
+        {
+            AsignarTarea(i, paso.Plantilla!, ahora);
+            Avanzar(i, pasos, ahora);
+            return;
+        }
+
         var mensaje = paso.Canal == Canal.Email
             ? await EnviarEmailAsync(i, paso.Plantilla!, ct)
             : await EnviarWhatsAppAsync(i, paso.Plantilla!, ahora, ct);
@@ -75,12 +82,45 @@ public class MotorCampanas(
         if (mensaje.Estado == EstadoMensaje.Enviado && p.Estado == EstadoProspecto.Nuevo)
             p.Estado = EstadoProspecto.Contactado;
 
+        Avanzar(i, pasos, ahora);
+    }
+
+    private void Avanzar(InscripcionCampana i, List<PasoCampana> pasos, DateTime ahora)
+    {
         i.Intentos = 0;
         i.PasoActual++;
-        if (i.PasoActual >= pasos.Count)
-            Finalizar(i, EstadoInscripcion.Completada);
-        else
+        if (i.PasoActual < pasos.Count)
+        {
             i.ProximoEnvio = horario.Ajustar(ahora.AddDays(pasos[i.PasoActual].DiasEspera));
+            return;
+        }
+        Finalizar(i, EstadoInscripcion.Completada);
+
+        // Terminó la secuencia sin respuesta: se agenda retomar el contacto en 3 meses (prospecto "frío"),
+        // salvo que el comercial tenga una acción pendiente (no se pisa su agenda).
+        var p = i.Prospecto;
+        var respondio = p.UltimaRespuestaEn > i.CreadoEn;
+        if (!respondio && p.Estado is (EstadoProspecto.Nuevo or EstadoProspecto.Contactado) && p.ProximaAccion is null)
+        {
+            p.ProximaAccion = $"Retomar contacto: no respondió a la campaña \"{i.Campana.Nombre}\"";
+            p.FechaProximaAccion = horario.Ajustar(ahora.AddDays(90));
+        }
+    }
+
+    /// <summary>Paso manual: queda como próxima acción del comercial, con el texto sugerido ya personalizado.</summary>
+    private void AsignarTarea(InscripcionCampana i, Plantilla plantilla, DateTime ahora)
+    {
+        var p = i.Prospecto;
+        var titulo = renderizador.Renderizar(string.IsNullOrWhiteSpace(plantilla.Asunto) ? plantilla.Nombre : plantilla.Asunto, p, i.Campana.Servicio, html: false);
+        var detalle = renderizador.Renderizar(plantilla.Cuerpo, p, i.Campana.Servicio, html: false);
+        p.ProximaAccion = titulo.Length > 300 ? titulo[..300] : titulo;
+        p.FechaProximaAccion = ahora;
+        p.ActualizadoEn = ahora;
+        db.Interacciones.Add(new Interaccion
+        {
+            ProspectoId = p.Id, Tipo = TipoInteraccion.Sistema, Fecha = ahora,
+            Detalle = $"Tarea de la campaña \"{i.Campana.Nombre}\": {titulo}\n{detalle}",
+        });
     }
 
     private static void Finalizar(InscripcionCampana i, EstadoInscripcion estado)
@@ -102,7 +142,8 @@ public class MotorCampanas(
 
         var r = await email.EnviarAsync(
             new CorreoSaliente(p.Email!, p.NombreContacto, asunto, cuerpo, renderizador.LinkBaja(p),
-                smtpOpciones.Value.ResponderAlComercial ? p.AsignadoA?.Email : null), ct);
+                smtpOpciones.Value.ResponderAlComercial ? p.AsignadoA?.Email : null,
+                plantilla.AdjuntoNombre, plantilla.AdjuntoContenido), ct);
         return Aplicar(mensaje, r);
     }
 

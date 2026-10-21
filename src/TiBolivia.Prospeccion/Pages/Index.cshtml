@@ -2,6 +2,17 @@
 @model IndexModel
 @{ ViewData["Title"] = "Panel"; }
 <h3 class="mb-3">Panel comercial</h3>
+@if (Model.TareasVencidas + Model.TareasHoy > 0)
+{
+    <div class="alert alert-@(Model.TareasVencidas > 0 ? "danger" : "info") d-flex justify-content-between align-items-center">
+        <span>Tiene <b>@Model.TareasHoy</b> tarea(s) para hoy@(Model.TareasVencidas > 0 ? $" y {Model.TareasVencidas} vencida(s)" : "").</span>
+        <a asp-page="/Tareas/Index" class="btn btn-sm btn-light">Ver mis tareas</a>
+    </div>
+}
+<div class="row g-3 mb-3">
+    <div class="col-md-3"><div class="card p-3"><div class="text-muted small">Negocios en curso (Interesado → Propuesta)</div><div class="kpi">Bs @Model.ValorEnEmbudo.ToString("N0")</div></div></div>
+    <div class="col-md-3"><div class="card p-3"><div class="text-muted small">Ganado</div><div class="kpi text-success">Bs @Model.ValorGanado.ToString("N0")</div></div></div>
+</div>
 <div class="row g-3 mb-4">
     <div class="col-md-2"><div class="card p-3"><div class="text-muted small">Prospectos</div><div class="kpi">@Model.TotalProspectos</div></div></div>
     <div class="col-md-2"><div class="card p-3"><div class="text-muted small">Enviados hoy</div><div class="kpi">@Model.EnviadosHoy</div></div></div>

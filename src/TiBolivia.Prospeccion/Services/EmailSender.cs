@@ -6,7 +6,8 @@ using MimeKit;
 
 namespace TiBolivia.Prospeccion.Services;
 
-public record CorreoSaliente(string Para, string? NombrePara, string Asunto, string Html, string LinkBaja, string? ResponderA);
+public record CorreoSaliente(string Para, string? NombrePara, string Asunto, string Html, string LinkBaja, string? ResponderA,
+    string? AdjuntoNombre = null, byte[]? AdjuntoContenido = null);
 
 public interface IEnviadorEmail
 {
@@ -35,7 +36,10 @@ public partial class EnviadorEmailSmtp(IOptions<SmtpOptions> opciones, ILogger<E
             Si no desea recibir más mensajes, <a href="{c.LinkBaja}">haga clic aquí para darse de baja</a>.</p>
             </div>
             """;
-        msg.Body = new BodyBuilder { HtmlBody = html, TextBody = ATexto(c.Html) + $"\n\nDarse de baja: {c.LinkBaja}" }.ToMessageBody();
+        var cuerpo = new BodyBuilder { HtmlBody = html, TextBody = ATexto(c.Html) + $"\n\nDarse de baja: {c.LinkBaja}" };
+        if (c.AdjuntoContenido is { Length: > 0 } && !string.IsNullOrWhiteSpace(c.AdjuntoNombre))
+            cuerpo.Attachments.Add(c.AdjuntoNombre, c.AdjuntoContenido);
+        msg.Body = cuerpo.ToMessageBody();
 
         if (o.Simulacion)
         {

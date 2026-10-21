@@ -32,6 +32,14 @@ public class EditarModel(AppDbContext db) : PageModel
         [Display(Name = "Aceptó recibir WhatsApp (opt-in)")] public bool ConsentimientoWhatsApp { get; set; }
         [Display(Name = "Baja de correos")] public bool BajaEmail { get; set; }
         [Display(Name = "Baja de WhatsApp")] public bool BajaWhatsApp { get; set; }
+        [RegularExpression("^[ABC]?$", ErrorMessage = "Use A, B o C")] public string? Prioridad { get; set; }
+        [Display(Name = "Dirección")] public string? Direccion { get; set; }
+        [Display(Name = "Qué ofrecerle")] public string? Necesidad { get; set; }
+        [Display(Name = "Fuente de los datos")] public string? Fuente { get; set; }
+        [Display(Name = "Datos por verificar")] public bool DatosPorVerificar { get; set; }
+        [Display(Name = "Valor estimado (Bs)"), Range(0, 100_000_000)] public decimal? ValorEstimado { get; set; }
+        [Display(Name = "Próxima acción")] public string? ProximaAccion { get; set; }
+        [Display(Name = "Fecha"), DataType(DataType.Date)] public DateTime? FechaProximaAccion { get; set; }
     }
 
     public async Task<IActionResult> OnGetAsync(int? id)
@@ -46,6 +54,9 @@ public class EditarModel(AppDbContext db) : PageModel
                 Telefono = p.Telefono, Rubro = p.Rubro, Ciudad = p.Ciudad, SitioWeb = p.SitioWeb, Origen = p.Origen,
                 Notas = p.Notas, Estado = p.Estado, AsignadoAId = p.AsignadoAId, ConsentimientoWhatsApp = p.ConsentimientoWhatsApp,
                 BajaEmail = p.BajaEmail, BajaWhatsApp = p.BajaWhatsApp,
+                Prioridad = p.Prioridad, Direccion = p.Direccion, Necesidad = p.Necesidad, Fuente = p.Fuente,
+                DatosPorVerificar = p.DatosPorVerificar, ValorEstimado = p.ValorEstimado, ProximaAccion = p.ProximaAccion,
+                FechaProximaAccion = p.FechaProximaAccion is { } f ? Fechas.ABolivia(f).Date : null,
             };
         }
         else
@@ -91,6 +102,14 @@ public class EditarModel(AppDbContext db) : PageModel
         p.ConsentimientoWhatsApp = Datos.ConsentimientoWhatsApp;
         p.BajaEmail = Datos.BajaEmail;
         p.BajaWhatsApp = Datos.BajaWhatsApp;
+        p.Prioridad = string.IsNullOrWhiteSpace(Datos.Prioridad) ? null : Datos.Prioridad;
+        p.Direccion = Datos.Direccion?.Trim();
+        p.Necesidad = Datos.Necesidad?.Trim();
+        p.Fuente = Datos.Fuente?.Trim();
+        p.DatosPorVerificar = Datos.DatosPorVerificar;
+        p.ValorEstimado = Datos.ValorEstimado;
+        p.ProximaAccion = string.IsNullOrWhiteSpace(Datos.ProximaAccion) ? null : Datos.ProximaAccion.Trim();
+        p.FechaProximaAccion = p.ProximaAccion is null ? null : Fechas.InicioDelDiaUtc(Datos.FechaProximaAccion ?? DateTime.Today);
         p.ActualizadoEn = DateTime.UtcNow;
         await db.SaveChangesAsync();
 

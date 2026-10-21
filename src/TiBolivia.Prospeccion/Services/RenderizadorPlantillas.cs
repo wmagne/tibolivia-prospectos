@@ -9,7 +9,7 @@ namespace TiBolivia.Prospeccion.Services;
 public partial class RenderizadorPlantillas(IOptions<CampanasOptions> opciones)
 {
     public static readonly string[] Variables =
-        ["Nombre", "Contacto", "Empresa", "Cargo", "Ciudad", "Rubro", "Servicio", "DescripcionServicio",
+        ["Nombre", "Contacto", "Empresa", "Cargo", "Ciudad", "Rubro", "Necesidad", "Servicio", "DescripcionServicio",
          "UrlServicio", "Comercial", "EmailComercial", "TelefonoComercial", "LinkBaja"];
 
     public string Renderizar(string? texto, Prospecto p, Servicio? servicio, bool html)
@@ -34,6 +34,10 @@ public partial class RenderizadorPlantillas(IOptions<CampanasOptions> opciones)
         ["Cargo"] = p.Cargo ?? "",
         ["Ciudad"] = p.Ciudad ?? "",
         ["Rubro"] = p.Rubro ?? "",
+        // Qué ofrecerle a esta empresa (del análisis del prospecto); si falta, la oferta general de TIBolivia.
+        ["Necesidad"] = string.IsNullOrWhiteSpace(p.Necesidad)
+            ? "apps móviles, sistemas CRM y correo corporativo con dominio propio"
+            : char.ToLowerInvariant(p.Necesidad.Trim()[0]) + p.Necesidad.Trim()[1..].TrimEnd('.'),
         ["Servicio"] = s?.Nombre ?? "",
         ["DescripcionServicio"] = s?.Descripcion ?? "",
         ["UrlServicio"] = s?.UrlInformacion ?? "",

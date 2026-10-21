@@ -21,14 +21,23 @@ public static class DatosIniciales
         var emailAdmin = config["Admin:Email"] ?? "admin@tibolivia.com";
         if (await usuarios.FindByEmailAsync(emailAdmin) is null)
         {
-            var admin = new Usuario { UserName = emailAdmin, Email = emailAdmin, NombreCompleto = "Administrador", EmailConfirmed = true };
+            var admin = new Usuario { UserName = emailAdmin, Email = emailAdmin, NombreCompleto = config["Admin:Nombre"] ?? "Administrador", EmailConfirmed = true };
             var r = await usuarios.CreateAsync(admin, config["Admin:Password"] ?? throw new InvalidOperationException("Configure Admin:Password"));
             if (!r.Succeeded) throw new InvalidOperationException(string.Join("; ", r.Errors.Select(e => e.Description)));
             await usuarios.AddToRoleAsync(admin, Roles.Admin);
         }
 
+        // El nombre del administrador firma los mensajes ({{Comercial}}): se actualiza si sigue con el nombre genérico.
+        if (config["Admin:Nombre"] is { Length: > 0 } nombreAdmin && await usuarios.FindByEmailAsync(emailAdmin) is { NombreCompleto: "Administrador" } adminActual)
+        {
+            adminActual.NombreCompleto = nombreAdmin;
+            await usuarios.UpdateAsync(adminActual);
+        }
+
         if (!await db.Servicios.AnyAsync()) await CrearEjemplosAsync(db);
         await PaqueteCampanas.AplicarAsync(db);
+        await CargaListas.AplicarAsync(sp, (await usuarios.FindByEmailAsync(emailAdmin))?.Id,
+            sp.GetRequiredService<ILoggerFactory>().CreateLogger("CargaListas"));
     }
 
     private static async Task CrearEjemplosAsync(AppDbContext db)

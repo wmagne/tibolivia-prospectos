@@ -19,6 +19,9 @@ public class IndexModel(AppDbContext db, ServicioInscripciones inscripciones) : 
     [BindProperty(SupportsGet = true)] public string? Rubro { get; set; }
     [BindProperty(SupportsGet = true)] public string? AsignadoA { get; set; }
     [BindProperty(SupportsGet = true)] public bool Mios { get; set; }
+    [BindProperty(SupportsGet = true)] public string? Prioridad { get; set; }
+    [BindProperty(SupportsGet = true)] public bool PorVerificar { get; set; }
+    public List<string> Rubros { get; private set; } = [];
     [BindProperty(SupportsGet = true)] public int Pagina { get; set; } = 1;
 
     public List<Prospecto> Prospectos { get; private set; } = [];
@@ -34,18 +37,21 @@ public class IndexModel(AppDbContext db, ServicioInscripciones inscripciones) : 
         {
             var t = $"%{Buscar.Trim()}%";
             q = q.Where(p => EF.Functions.ILike(p.Empresa, t) || EF.Functions.ILike(p.NombreContacto ?? "", t)
-                || EF.Functions.ILike(p.Email ?? "", t) || EF.Functions.ILike(p.Telefono ?? "", t));
+                || EF.Functions.ILike(p.Email ?? "", t) || EF.Functions.ILike(p.Telefono ?? "", t)
+                || EF.Functions.ILike(p.Necesidad ?? "", t) || EF.Functions.ILike(p.Notas ?? "", t));
         }
         if (Estado is not null) q = q.Where(p => p.Estado == Estado);
         if (!string.IsNullOrWhiteSpace(Ciudad)) q = q.Where(p => p.Ciudad == Ciudad);
         if (!string.IsNullOrWhiteSpace(Rubro)) q = q.Where(p => p.Rubro == Rubro);
+        if (!string.IsNullOrWhiteSpace(Prioridad)) q = q.Where(p => p.Prioridad == Prioridad);
+        if (PorVerificar) q = q.Where(p => p.DatosPorVerificar);
         if (Mios) AsignadoA = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (AsignadoA == "-") q = q.Where(p => p.AsignadoAId == null);
         else if (!string.IsNullOrWhiteSpace(AsignadoA)) q = q.Where(p => p.AsignadoAId == AsignadoA);
 
         Total = await q.CountAsync();
         Pagina = Math.Max(1, Pagina);
-        Prospectos = await q.OrderByDescending(p => p.ActualizadoEn).Skip((Pagina - 1) * TamanoPagina).Take(TamanoPagina).ToListAsync();
+        Prospectos = await q.OrderBy(p => p.Prioridad ?? "Z").ThenByDescending(p => p.ActualizadoEn).Skip((Pagina - 1) * TamanoPagina).Take(TamanoPagina).ToListAsync();
         await CargarListasAsync();
     }
 
@@ -74,10 +80,11 @@ public class IndexModel(AppDbContext db, ServicioInscripciones inscripciones) : 
         return RedirectToPage(RutaActual());
     }
 
-    private object RutaActual() => new { Buscar, Estado, Ciudad, Rubro, AsignadoA, Mios, Pagina };
+    private object RutaActual() => new { Buscar, Estado, Ciudad, Rubro, AsignadoA, Mios, Prioridad, PorVerificar, Pagina };
 
     private async Task CargarListasAsync()
     {
+        Rubros = await db.Prospectos.Where(p => p.Rubro != null).Select(p => p.Rubro!).Distinct().OrderBy(r => r).ToListAsync();
         Campanas = new SelectList(await db.Campanas.OrderBy(c => c.Nombre).ToListAsync(), "Id", "Nombre");
         Usuarios = new SelectList(await db.Users.Where(u => u.Activo).OrderBy(u => u.NombreCompleto).ToListAsync(), "Id", "NombreCompleto");
     }

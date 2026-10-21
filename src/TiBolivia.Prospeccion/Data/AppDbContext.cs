@@ -35,6 +35,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.HasIndex(x => x.Telefono);
             e.HasIndex(x => x.Estado);
             e.HasIndex(x => x.TokenBaja).IsUnique();
+            e.HasIndex(x => new { x.AsignadoAId, x.FechaProximaAccion });
+            e.Property(x => x.Prioridad).HasMaxLength(1);
+            e.Property(x => x.Direccion).HasMaxLength(300);
+            e.Property(x => x.Necesidad).HasMaxLength(500);
+            e.Property(x => x.Fuente).HasMaxLength(300);
+            e.Property(x => x.ProximaAccion).HasMaxLength(300);
+            e.Property(x => x.ValorEstimado).HasPrecision(14, 2);
             e.HasOne(x => x.AsignadoA).WithMany().HasForeignKey(x => x.AsignadoAId).OnDelete(DeleteBehavior.SetNull);
         });
 
@@ -45,6 +52,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.Property(x => x.Asunto).HasMaxLength(300);
             e.Property(x => x.WhatsAppPlantillaMeta).HasMaxLength(200);
             e.Property(x => x.WhatsAppIdioma).HasMaxLength(10);
+            e.Property(x => x.AdjuntoNombre).HasMaxLength(200);
         });
 
         b.Entity<Campana>(e =>

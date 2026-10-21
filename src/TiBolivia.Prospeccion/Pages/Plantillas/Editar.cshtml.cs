@@ -21,6 +21,7 @@ public class EditarModel(AppDbContext db, RenderizadorPlantillas renderizador) :
             var p = await db.Plantillas.FindAsync(id);
             if (p is null) return NotFound();
             Datos = p;
+            AdjuntoActual = p.AdjuntoNombre;
         }
         return Page();
     }
@@ -39,20 +40,40 @@ public class EditarModel(AppDbContext db, RenderizadorPlantillas renderizador) :
         return Page();
     }
 
+    private const long MaxAdjunto = 5 * 1024 * 1024;
+
+    /// <summary>Archivo para adjuntar a los correos de esta plantilla (ej. propuesta comercial en PDF).</summary>
+    [BindProperty] public IFormFile? Adjunto { get; set; }
+    [BindProperty] public bool QuitarAdjunto { get; set; }
+    public string? AdjuntoActual { get; private set; }
+
     public async Task<IActionResult> OnPostAsync()
     {
+        if (Adjunto is { Length: > MaxAdjunto }) ModelState.AddModelError("Adjunto", "El adjunto no puede superar 5 MB.");
         if (string.IsNullOrWhiteSpace(Datos.Nombre)) ModelState.AddModelError("Datos.Nombre", "El nombre es obligatorio");
         if (string.IsNullOrWhiteSpace(Datos.Cuerpo)) ModelState.AddModelError("Datos.Cuerpo", "El cuerpo es obligatorio");
         if (Datos.Canal == Canal.Email && string.IsNullOrWhiteSpace(Datos.Asunto)) ModelState.AddModelError("Datos.Asunto", "El asunto es obligatorio");
         if (!ModelState.IsValid) return Page();
 
-        if (Datos.Id == 0) db.Plantillas.Add(Datos);
+        Plantilla p;
+        if (Datos.Id == 0)
+        {
+            p = new Plantilla();
+            db.Plantillas.Add(p);
+        }
         else
         {
-            var p = await db.Plantillas.FindAsync(Datos.Id);
-            if (p is null) return NotFound();
-            p.Nombre = Datos.Nombre; p.Canal = Datos.Canal; p.Asunto = Datos.Asunto; p.Cuerpo = Datos.Cuerpo;
-            p.WhatsAppPlantillaMeta = Datos.WhatsAppPlantillaMeta; p.WhatsAppIdioma = Datos.WhatsAppIdioma; p.WhatsAppParametros = Datos.WhatsAppParametros;
+            p = await db.Plantillas.FindAsync(Datos.Id) ?? throw new InvalidOperationException("Plantilla no encontrada");
+        }
+        p.Nombre = Datos.Nombre; p.Canal = Datos.Canal; p.Asunto = Datos.Asunto; p.Cuerpo = Datos.Cuerpo;
+        p.WhatsAppPlantillaMeta = Datos.WhatsAppPlantillaMeta; p.WhatsAppIdioma = Datos.WhatsAppIdioma; p.WhatsAppParametros = Datos.WhatsAppParametros;
+        if (QuitarAdjunto || p.Canal != Canal.Email) { p.AdjuntoNombre = null; p.AdjuntoContenido = null; }
+        if (Adjunto is { Length: > 0 } && p.Canal == Canal.Email)
+        {
+            using var ms = new MemoryStream();
+            await Adjunto.CopyToAsync(ms);
+            p.AdjuntoNombre = Path.GetFileName(Adjunto.FileName);
+            p.AdjuntoContenido = ms.ToArray();
         }
         await db.SaveChangesAsync();
         TempData["Ok"] = "Plantilla guardada.";

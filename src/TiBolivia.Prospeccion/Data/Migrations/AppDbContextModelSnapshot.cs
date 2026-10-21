@@ -371,6 +371,13 @@ namespace TiBolivia.Prospeccion.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<byte[]>("AdjuntoContenido")
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("AdjuntoNombre")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<string>("Asunto")
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)");
@@ -441,6 +448,13 @@ namespace TiBolivia.Prospeccion.Data.Migrations
                     b.Property<DateTime>("CreadoEn")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("DatosPorVerificar")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Direccion")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
                     b.Property<string>("Email")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
@@ -455,6 +469,17 @@ namespace TiBolivia.Prospeccion.Data.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
+                    b.Property<DateTime?>("FechaProximaAccion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Fuente")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Necesidad")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<string>("NombreContacto")
                         .HasColumnType("text");
 
@@ -463,6 +488,14 @@ namespace TiBolivia.Prospeccion.Data.Migrations
 
                     b.Property<string>("Origen")
                         .HasColumnType("text");
+
+                    b.Property<string>("Prioridad")
+                        .HasMaxLength(1)
+                        .HasColumnType("character varying(1)");
+
+                    b.Property<string>("ProximaAccion")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
 
                     b.Property<string>("Rubro")
                         .HasColumnType("text");
@@ -480,9 +513,11 @@ namespace TiBolivia.Prospeccion.Data.Migrations
                     b.Property<DateTime?>("UltimaRespuestaEn")
                         .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("Id");
+                    b.Property<decimal?>("ValorEstimado")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)");
 
-                    b.HasIndex("AsignadoAId");
+                    b.HasKey("Id");
 
                     b.HasIndex("Email");
 
@@ -492,6 +527,8 @@ namespace TiBolivia.Prospeccion.Data.Migrations
 
                     b.HasIndex("TokenBaja")
                         .IsUnique();
+
+                    b.HasIndex("AsignadoAId", "FechaProximaAccion");
 
                     b.ToTable("Prospectos");
                 });

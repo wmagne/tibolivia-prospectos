@@ -3,7 +3,8 @@ using Microsoft.AspNetCore.Identity;
 namespace TiBolivia.Prospeccion.Domain;
 
 public enum EstadoProspecto { Nuevo, Contactado, Interesado, ReunionAgendada, PropuestaEnviada, Ganado, Perdido, NoContactar }
-public enum Canal { Email, WhatsApp }
+/// <summary>Tarea = paso manual que se asigna al comercial (llamar, WhatsApp personalizado, visita).</summary>
+public enum Canal { Email, WhatsApp, Tarea }
 public enum EstadoInscripcion { Activa, Pausada, Completada, Detenida }
 public enum DireccionMensaje { Saliente, Entrante }
 public enum EstadoMensaje { Pendiente, Enviado, Entregado, Leido, Fallido, Recibido, Omitido }
@@ -47,6 +48,19 @@ public class Prospecto
     public string? Notas { get; set; }
     public EstadoProspecto Estado { get; set; } = EstadoProspecto.Nuevo;
 
+    /// <summary>A = necesidad visible y decisión rápida; B = buen encaje; C = empresa grande, ciclo largo.</summary>
+    public string? Prioridad { get; set; }
+    public string? Direccion { get; set; }
+    /// <summary>Qué ofrecerle: necesidad detectada / servicio de entrada.</summary>
+    public string? Necesidad { get; set; }
+    /// <summary>De dónde salieron los datos (URL o directorio).</summary>
+    public string? Fuente { get; set; }
+    public bool DatosPorVerificar { get; set; }
+    /// <summary>Valor estimado del negocio en Bs (para el embudo).</summary>
+    public decimal? ValorEstimado { get; set; }
+    public string? ProximaAccion { get; set; }
+    public DateTime? FechaProximaAccion { get; set; }
+
     public string? AsignadoAId { get; set; }
     public Usuario? AsignadoA { get; set; }
 
@@ -84,6 +98,9 @@ public class Plantilla
     public string WhatsAppIdioma { get; set; } = "es";
     /// <summary>Variables separadas por coma que llenan {{1}}, {{2}}... de la plantilla de Meta. Ej: {{Nombre}},{{Empresa}}</summary>
     public string? WhatsAppParametros { get; set; }
+    /// <summary>Archivo adjunto de los correos (ej. propuesta comercial en PDF).</summary>
+    public string? AdjuntoNombre { get; set; }
+    public byte[]? AdjuntoContenido { get; set; }
     public DateTime CreadoEn { get; set; } = DateTime.UtcNow;
 }
 
