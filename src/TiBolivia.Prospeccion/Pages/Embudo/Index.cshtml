@@ -1,7 +1,7 @@
 @page
 @model TiBolivia.Prospeccion.Pages.Embudo.IndexModel
 @{ ViewData["Title"] = "Embudo de ventas"; }
-<div class="d-flex justify-content-between align-items-center mb-2">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
     <h3 class="mb-0">Embudo de ventas</h3>
     <form method="get" class="d-flex gap-2">
         <select asp-for="Comercial" asp-items="Model.Usuarios" class="form-select form-select-sm"><option value="">Todo el equipo</option></select>

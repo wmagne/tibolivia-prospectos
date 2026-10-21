@@ -154,6 +154,27 @@ namespace TiBolivia.Prospeccion.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("TiBolivia.Prospeccion.Domain.AjusteGuardado", b =>
+                {
+                    b.Property<string>("Clave")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("ActualizadoEn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("Cifrado")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Valor")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Clave");
+
+                    b.ToTable("Ajustes");
+                });
+
             modelBuilder.Entity("TiBolivia.Prospeccion.Domain.Campana", b =>
                 {
                     b.Property<int>("Id")

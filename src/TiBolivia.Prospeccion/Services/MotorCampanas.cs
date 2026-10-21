@@ -13,7 +13,7 @@ public class MotorCampanas(
     RenderizadorPlantillas renderizador,
     HorarioLaboral horario,
     IOptions<CampanasOptions> campanasOpciones,
-    IOptions<WhatsAppOptions> whatsAppOpciones,
+    IOptionsSnapshot<WhatsAppOptions> whatsAppOpciones,
     IOptions<SmtpOptions> smtpOpciones,
     TimeProvider tiempo,
     ILogger<MotorCampanas> log)

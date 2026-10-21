@@ -18,7 +18,7 @@ public interface IClienteChatbot
 /// Reenvía los mensajes entrantes de WhatsApp al chatbot de la web de TI Bolivia
 /// para que responda con el mismo conocimiento que usa en la página.
 /// </summary>
-public class ClienteChatbotHttp(HttpClient http, IOptions<ChatbotOptions> opciones, ILogger<ClienteChatbotHttp> log) : IClienteChatbot
+public class ClienteChatbotHttp(HttpClient http, IOptionsSnapshot<ChatbotOptions> opciones, ILogger<ClienteChatbotHttp> log) : IClienteChatbot
 {
     public async Task<RespuestaChatbot?> ConsultarAsync(SolicitudChatbot solicitud, CancellationToken ct)
     {

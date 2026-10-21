@@ -18,7 +18,7 @@ public static class TextMeBotWebhook
 
     public static void MapTextMeBotWebhook(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/webhooks/textmebot", async (HttpRequest req, IServiceProvider sp, IOptions<WhatsAppOptions> o, ILoggerFactory lf, CancellationToken ct) =>
+        app.MapPost("/webhooks/textmebot", async (HttpRequest req, IServiceProvider sp, IOptionsSnapshot<WhatsAppOptions> o, ILoggerFactory lf, CancellationToken ct) =>
         {
             var log = lf.CreateLogger("TextMeBotWebhook");
             var token = o.Value.TextMeBot.TokenWebhook;

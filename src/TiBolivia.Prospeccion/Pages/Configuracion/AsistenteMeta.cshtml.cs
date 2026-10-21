@@ -9,7 +9,7 @@ using TiBolivia.Prospeccion.Services;
 namespace TiBolivia.Prospeccion.Pages.Configuracion;
 
 public class AsistenteMetaModel(
-    IOptions<WhatsAppOptions> opciones,
+    IOptionsSnapshot<WhatsAppOptions> opciones,
     IOptions<SmtpOptions> smtp,
     IOptions<CampanasOptions> campanas,
     ConfiguradorMeta configurador,

@@ -22,7 +22,7 @@ public static class WhatsAppWebhook
         var grupo = app.MapGroup("/webhooks/whatsapp").AllowAnonymous().DisableAntiforgery();
 
         // Verificación inicial que hace Meta al registrar el webhook.
-        grupo.MapGet("", (HttpRequest req, IOptions<WhatsAppOptions> o) =>
+        grupo.MapGet("", (HttpRequest req, IOptionsSnapshot<WhatsAppOptions> o) =>
         {
             var q = req.Query;
             return q["hub.mode"] == "subscribe" && !string.IsNullOrEmpty(o.Value.VerifyToken) && q["hub.verify_token"] == o.Value.VerifyToken
@@ -30,7 +30,7 @@ public static class WhatsAppWebhook
                 : Results.StatusCode(StatusCodes.Status403Forbidden);
         });
 
-        grupo.MapPost("", async (HttpRequest req, IServiceProvider sp, IOptions<WhatsAppOptions> o, ILoggerFactory lf, CancellationToken ct) =>
+        grupo.MapPost("", async (HttpRequest req, IServiceProvider sp, IOptionsSnapshot<WhatsAppOptions> o, ILoggerFactory lf, CancellationToken ct) =>
         {
             var log = lf.CreateLogger("WhatsAppWebhook");
             using var lector = new StreamReader(req.Body, Encoding.UTF8);

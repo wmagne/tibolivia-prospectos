@@ -8,7 +8,7 @@ namespace TiBolivia.Prospeccion.Services;
 /// No requiere plantillas aprobadas, pero NO es oficial: los envíos masivos a desconocidos
 /// pueden hacer que WhatsApp bloquee el número. Úselo con pocos mensajes y contactos que lo esperan.
 /// </summary>
-public class EnviadorWhatsAppTextMeBot(HttpClient http, IOptions<WhatsAppOptions> opciones, ILogger<EnviadorWhatsAppTextMeBot> log) : IEnviadorWhatsApp
+public class EnviadorWhatsAppTextMeBot(HttpClient http, IOptionsSnapshot<WhatsAppOptions> opciones, ILogger<EnviadorWhatsAppTextMeBot> log) : IEnviadorWhatsApp
 {
     // Una sola cola para todo el proceso: respeta la pausa entre mensajes aunque envíen el motor y un comercial a la vez.
     private static readonly SemaphoreSlim Cola = new(1, 1);

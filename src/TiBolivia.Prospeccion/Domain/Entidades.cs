@@ -178,3 +178,12 @@ public class Interaccion
     public string Detalle { get; set; } = "";
     public DateTime Fecha { get; set; } = DateTime.UtcNow;
 }
+
+/// <summary>Ajuste guardado desde la interfaz (ej. datos de WhatsApp). Los secretos se guardan cifrados.</summary>
+public class AjusteGuardado
+{
+    public string Clave { get; set; } = "";
+    public string Valor { get; set; } = "";
+    public bool Cifrado { get; set; }
+    public DateTime ActualizadoEn { get; set; } = DateTime.UtcNow;
+}

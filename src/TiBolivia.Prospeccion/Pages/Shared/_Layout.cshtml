@@ -1,66 +1,94 @@
 @inject Microsoft.Extensions.Options.IOptions<TiBolivia.Prospeccion.Services.SmtpOptions> Smtp
-@inject Microsoft.Extensions.Options.IOptions<TiBolivia.Prospeccion.Services.WhatsAppOptions> WhatsApp
+@inject Microsoft.Extensions.Options.IOptionsSnapshot<TiBolivia.Prospeccion.Services.WhatsAppOptions> WhatsApp
+@{
+    var ruta = ViewContext.RouteData.Values["page"]?.ToString() ?? "";
+    string Activo(string prefijo) => ruta.StartsWith(prefijo) ? "active" : "";
+    var esAdmin = User.IsInRole(Roles.Admin);
+}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b3d91" />
     <title>@ViewData["Title"] - Prospección TI Bolivia</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand fw-bold" asp-page="/Index">TI Bolivia · Prospección</a>
+    <header class="sticky-top">
+        <nav class="navbar navbar-expand-xl navbar-dark barra">
+            <div class="container-fluid px-3 px-lg-4">
+                <a class="navbar-brand fw-bold d-flex align-items-center gap-2" asp-page="/Index">
+                    <span class="logo">TI</span><span>Bolivia <span class="fw-light d-none d-sm-inline">· Prospección</span></span>
+                </a>
                 @if (User.Identity?.IsAuthenticated == true)
                 {
-                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu" aria-label="Menú">
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu" aria-controls="menu" aria-expanded="false" aria-label="Abrir menú">
                         <span class="navbar-toggler-icon"></span>
                     </button>
                     <div class="collapse navbar-collapse" id="menu">
                         <ul class="navbar-nav me-auto">
-                            <li class="nav-item"><a class="nav-link" asp-page="/Index">Panel</a></li>
-                            <li class="nav-item"><a class="nav-link" asp-page="/Prospectos/Index">Prospectos</a></li>
-                            <li class="nav-item"><a class="nav-link" asp-page="/Tareas/Index">Mis tareas</a></li>
-                            <li class="nav-item"><a class="nav-link" asp-page="/Embudo/Index">Embudo</a></li>
-                            <li class="nav-item"><a class="nav-link" asp-page="/Mensajes/Index">Mensajes</a></li>
-                            @if (User.IsInRole(Roles.Admin))
+                            <li class="nav-item"><a class="nav-link @(ruta == "/Index" ? "active" : "")" asp-page="/Index"><i class="bi bi-speedometer2"></i> Panel</a></li>
+                            <li class="nav-item"><a class="nav-link @Activo("/Prospectos")" asp-page="/Prospectos/Index"><i class="bi bi-buildings"></i> Prospectos</a></li>
+                            <li class="nav-item"><a class="nav-link @Activo("/Tareas")" asp-page="/Tareas/Index"><i class="bi bi-check2-square"></i> Mis tareas</a></li>
+                            <li class="nav-item"><a class="nav-link @Activo("/Embudo")" asp-page="/Embudo/Index"><i class="bi bi-funnel"></i> Embudo</a></li>
+                            <li class="nav-item"><a class="nav-link @Activo("/Mensajes")" asp-page="/Mensajes/Index"><i class="bi bi-chat-dots"></i> Mensajes</a></li>
+                            @if (esAdmin)
                             {
-                                <li class="nav-item"><a class="nav-link" asp-page="/Campanas/Index">Campañas</a></li>
-                                <li class="nav-item"><a class="nav-link" asp-page="/Plantillas/Index">Plantillas</a></li>
-                                <li class="nav-item"><a class="nav-link" asp-page="/Servicios/Index">Servicios</a></li>
-                                <li class="nav-item"><a class="nav-link" asp-page="/Usuarios/Index">Usuarios</a></li>
-                                <li class="nav-item"><a class="nav-link" asp-page="/Configuracion/Correo">Correo</a></li>
-                                <li class="nav-item"><a class="nav-link" asp-page="/Configuracion/WhatsApp">WhatsApp</a></li>
-                                <li class="nav-item"><a class="nav-link" asp-page="/Configuracion/AsistenteMeta">Asistente Meta</a></li>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle @(Activo("/Campanas") + Activo("/Plantillas") + Activo("/Servicios"))" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-megaphone"></i> Campañas</a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" asp-page="/Campanas/Index"><i class="bi bi-diagram-3"></i> Campañas</a></li>
+                                        <li><a class="dropdown-item" asp-page="/Plantillas/Index"><i class="bi bi-file-text"></i> Plantillas</a></li>
+                                        <li><a class="dropdown-item" asp-page="/Servicios/Index"><i class="bi bi-briefcase"></i> Servicios</a></li>
+                                    </ul>
+                                </li>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle @(Activo("/Usuarios") + Activo("/Configuracion"))" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-gear"></i> Configuración</a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" asp-page="/Usuarios/Index"><i class="bi bi-people"></i> Usuarios</a></li>
+                                        <li><hr class="dropdown-divider" /></li>
+                                        <li><a class="dropdown-item" asp-page="/Configuracion/Correo"><i class="bi bi-envelope"></i> Correo</a></li>
+                                        <li><a class="dropdown-item" asp-page="/Configuracion/WhatsApp"><i class="bi bi-whatsapp"></i> WhatsApp</a></li>
+                                        <li><a class="dropdown-item" asp-page="/Configuracion/AsistenteMeta"><i class="bi bi-magic"></i> Asistente Meta</a></li>
+                                    </ul>
+                                </li>
                             }
                         </ul>
-                        <span class="navbar-text me-3">@User.Identity.Name</span>
-                        <form method="post" asp-page="/Cuenta/Logout"><button class="btn btn-outline-light btn-sm">Salir</button></form>
+                        <div class="dropdown">
+                            <a class="nav-link text-white dropdown-toggle d-flex align-items-center gap-2 py-2" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-person-circle fs-5"></i><span class="text-truncate usuario">@User.Identity.Name</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><span class="dropdown-item-text small text-muted">@(esAdmin ? "Administrador" : "Comercial")</span></li>
+                                <li><hr class="dropdown-divider" /></li>
+                                <li><form method="post" asp-page="/Cuenta/Logout"><button class="dropdown-item"><i class="bi bi-box-arrow-right"></i> Salir</button></form></li>
+                            </ul>
+                        </div>
                     </div>
                 }
             </div>
         </nav>
     </header>
-    <div class="container-fluid px-4">
+    <div class="container-fluid px-3 px-lg-4 pt-3">
         @if (User.Identity?.IsAuthenticated == true && (Smtp.Value.Simulacion || WhatsApp.Value.Simulacion))
         {
-            <div class="alert alert-warning py-2 small">
-                <b>Modo simulación:</b>
-                @(Smtp.Value.Simulacion ? "correo (falta la contraseña SMTP)" : "")
-                @(Smtp.Value.Simulacion && WhatsApp.Value.Simulacion ? " y " : "")
-                @(WhatsApp.Value.Simulacion ? "WhatsApp (API de Meta no configurada)" : "").
-                Los mensajes se registran pero no se envían.
+            <div class="alert alert-warning py-2 small d-flex flex-wrap align-items-center gap-2">
+                <span><i class="bi bi-exclamation-triangle"></i> <b>Modo simulación:</b>
+                    @(Smtp.Value.Simulacion ? "correo" : "")@(Smtp.Value.Simulacion && WhatsApp.Value.Simulacion ? " y " : "")@(WhatsApp.Value.Simulacion ? "WhatsApp" : "")
+                    sin configurar. Los mensajes se registran pero no se envían.</span>
+                @if (esAdmin && WhatsApp.Value.Simulacion) { <a asp-page="/Configuracion/WhatsApp" class="ms-auto btn btn-sm btn-warning">Configurar WhatsApp</a> }
             </div>
         }
-        @if (TempData["Ok"] is string ok) { <div class="alert alert-success alert-dismissible">@ok<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
-        @if (TempData["Error"] is string err) { <div class="alert alert-danger alert-dismissible">@err<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
-        <main role="main" class="pb-3">
+        @if (TempData["Ok"] is string ok) { <div class="alert alert-success alert-dismissible"><i class="bi bi-check-circle"></i> @ok<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button></div> }
+        @if (TempData["Error"] is string err) { <div class="alert alert-danger alert-dismissible"><i class="bi bi-x-circle"></i> @err<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button></div> }
+        <main role="main" class="pb-4">
             @RenderBody()
         </main>
     </div>
+    <footer class="text-center text-muted small py-3">TIBolivia · Sistema de Prospección</footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

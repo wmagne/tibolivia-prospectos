@@ -14,10 +14,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<InscripcionCampana> Inscripciones => Set<InscripcionCampana>();
     public DbSet<Mensaje> Mensajes => Set<Mensaje>();
     public DbSet<Interaccion> Interacciones => Set<Interaccion>();
+    public DbSet<AjusteGuardado> Ajustes => Set<AjusteGuardado>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
         base.OnModelCreating(b);
+
+        b.Entity<AjusteGuardado>(e =>
+        {
+            e.HasKey(x => x.Clave);
+            e.Property(x => x.Clave).HasMaxLength(100);
+        });
 
         b.Entity<Servicio>(e =>
         {

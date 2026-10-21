@@ -20,7 +20,7 @@ public interface IEnviadorWhatsApp
 }
 
 /// <summary>Cliente de WhatsApp Business Cloud API (Meta).</summary>
-public class EnviadorWhatsAppCloud(HttpClient http, IOptions<WhatsAppOptions> opciones, ILogger<EnviadorWhatsAppCloud> log) : IEnviadorWhatsApp
+public class EnviadorWhatsAppCloud(HttpClient http, IOptionsSnapshot<WhatsAppOptions> opciones, ILogger<EnviadorWhatsAppCloud> log) : IEnviadorWhatsApp
 {
     public bool RequierePlantillasAprobadas => true;
 

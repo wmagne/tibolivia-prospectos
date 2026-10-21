@@ -15,12 +15,50 @@
     </div>
 }
 
+<form method="post" asp-page-handler="Guardar" class="card p-3 mb-3" autocomplete="off">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+        <h5 class="mb-0"><i class="bi bi-plug"></i> Datos de conexión</h5>
+        <div class="btn-group" role="group">
+            <input type="radio" class="btn-check" asp-for="Conexion.Proveedor" value="Meta" id="provMeta" />
+            <label class="btn btn-outline-primary btn-sm" for="provMeta">Meta (oficial)</label>
+            <input type="radio" class="btn-check" asp-for="Conexion.Proveedor" value="TextMeBot" id="provTmb" />
+            <label class="btn btn-outline-primary btn-sm" for="provTmb">TextMeBot</label>
+        </div>
+    </div>
+    <p class="small text-muted">Se guardan en la base de datos (las claves, cifradas) y se aplican al instante. Las claves no se muestran:
+        déjelas vacías para conservar las actuales.</p>
+    <div class="row g-2 solo-meta">
+        <div class="col-12 col-md-6 col-lg-4"><label class="form-label small mb-0">Phone Number ID</label><input asp-for="Conexion.PhoneNumberId" class="form-control" /></div>
+        <div class="col-12 col-md-6 col-lg-4"><label class="form-label small mb-0">WhatsApp Business Account ID</label><input asp-for="Conexion.BusinessAccountId" class="form-control" /></div>
+        <div class="col-12 col-md-6 col-lg-4"><label class="form-label small mb-0">App ID</label><input asp-for="Conexion.AppId" class="form-control" /></div>
+        <div class="col-12 col-md-6 col-lg-4"><label class="form-label small mb-0">Access Token permanente @(Model.TieneToken ? "✅" : "")</label>
+            <input asp-for="Conexion.AccessToken" type="password" class="form-control" placeholder="@(Model.TieneToken ? "Configurado (vacío = no cambiar)" : "EAAG...")" autocomplete="new-password" /></div>
+        <div class="col-12 col-md-6 col-lg-4"><label class="form-label small mb-0">App Secret @(Model.TieneAppSecret ? "✅" : "")</label>
+            <input asp-for="Conexion.AppSecret" type="password" class="form-control" placeholder="@(Model.TieneAppSecret ? "Configurado (vacío = no cambiar)" : "")" autocomplete="new-password" /></div>
+        <div class="col-12 col-md-6 col-lg-4"><label class="form-label small mb-0">Verify Token del webhook</label><input asp-for="Conexion.VerifyToken" class="form-control" /></div>
+    </div>
+    <div class="row g-2 solo-tmb">
+        <div class="col-12 col-md-6 col-lg-4"><label class="form-label small mb-0">API Key de TextMeBot @(Model.TieneTextMeBot ? "✅" : "")</label>
+            <input asp-for="Conexion.TextMeBotApiKey" type="password" class="form-control" placeholder="@(Model.TieneTextMeBot ? "Configurada (vacío = no cambiar)" : "")" autocomplete="new-password" /></div>
+        <div class="col-12 col-md-6 col-lg-4"><label class="form-label small mb-0">Token del webhook</label><input asp-for="Conexion.TextMeBotTokenWebhook" class="form-control" /></div>
+        <div class="col-12 col-md-6 col-lg-4"><label class="form-label small mb-0">Segundos entre mensajes</label><input asp-for="Conexion.SegundosEntreMensajes" type="number" min="3" max="120" class="form-control" /></div>
+    </div>
+    <div class="row g-2 mt-1">
+        <div class="col-12 col-md-6 col-lg-4"><label class="form-label small mb-0">URL del chatbot (opcional)</label><input asp-for="Conexion.ChatbotUrl" class="form-control" placeholder="https://..." /></div>
+        <div class="col-12 col-md-6 col-lg-4"><label class="form-label small mb-0">API Key del chatbot @(Model.TieneChatbotKey ? "✅" : "")</label>
+            <input asp-for="Conexion.ChatbotApiKey" type="password" class="form-control" autocomplete="new-password" /></div>
+        <div class="col-12 col-lg-4 d-flex align-items-end"><div class="form-check"><input asp-for="Conexion.RequerirConsentimiento" class="form-check-input" />
+            <label asp-for="Conexion.RequerirConsentimiento" class="form-check-label small">Escribir solo a quien aceptó WhatsApp (recomendado)</label></div></div>
+    </div>
+    <div class="mt-3"><button class="btn btn-primary"><i class="bi bi-save"></i> Guardar y aplicar</button></div>
+</form>
+
 <div class="row g-3">
     <div class="col-lg-6">
         <div class="card p-3 h-100">
             <h5>1. Datos configurados
                 <span class="badge bg-@(Model.O.Simulacion ? "warning text-dark" : "success")">@(Model.O.Simulacion ? "Simulación" : "Activo")</span></h5>
-            <table class="table table-sm small mb-2">
+            <div class="table-responsive"><table class="table table-sm small mb-2">
                 @if (Model.O.EsMeta)
                 {
                     <tr><td>@Marca(!string.IsNullOrEmpty(Model.O.PhoneNumberId))</td><td>Phone Number ID</td><td class="text-muted">obligatorio para enviar</td></tr>
@@ -36,7 +74,7 @@
                 }
                 <tr><td>@Marca(Model.ChatbotConfigurado)</td><td>URL del chatbot</td><td class="text-muted">respuestas automáticas</td></tr>
                 <tr><td>@Marca(Model.O.RequerirConsentimiento)</td><td>Exigir consentimiento (opt-in)</td><td class="text-muted">recomendado</td></tr>
-            </table>
+            </table></div>
             <p class="small mb-1">Los datos se cargan con el script <code>scripts\configurar-whatsapp.ps1</code> (ver README) y luego se reinicia el sistema.</p>
             <hr />
             <h6>URL del webhook para @(Model.O.EsMeta ? "Meta" : "el panel de TextMeBot")</h6>
@@ -89,7 +127,7 @@
     <h5>4. Plantillas usadas por las campañas</h5>
     <p class="small text-muted">Cada una debe existir en WhatsApp Manager con el <b>mismo nombre e idioma</b> y estar <b>APPROVED</b>.
         Pulse "Verificar ahora" para ver su estado (requiere el Business Account ID). Textos sugeridos en <code>docs/CAMPANAS.md</code>.</p>
-    <table class="table table-sm small mb-0">
+    <div class="table-responsive"><table class="table table-sm small mb-0">
         <thead><tr><th>Nombre en Meta</th><th>Idioma</th><th>Variables</th><th>Plantilla del sistema</th><th>Estado en Meta</th></tr></thead>
         <tbody>
         @foreach (var p in Model.PlantillasSistema)
@@ -102,14 +140,27 @@
             </tr>
         }
         </tbody>
-    </table>
+    </table></div>
     @if (Model.PlantillasMeta is { Count: > 0 } todas)
     {
         <details class="mt-2"><summary class="small">Todas las plantillas de su cuenta en Meta (@todas.Count)</summary>
-            <table class="table table-sm small mt-2">
+            <div class="table-responsive"><table class="table table-sm small mt-2">
                 @foreach (var t in todas) { <tr><td>@t.Nombre</td><td>@t.Idioma</td><td>@t.Categoria</td><td><span class="badge bg-@ColorEstado(t.Estado)">@t.Estado</span></td></tr> }
-            </table>
+            </table></div>
         </details>
     }
 </div>
+}
+
+@section Scripts {
+<script>
+    // Muestra solo los campos del proveedor elegido.
+    function proveedor() {
+        const meta = document.getElementById('provMeta').checked;
+        document.querySelectorAll('.solo-meta').forEach(e => e.style.display = meta ? '' : 'none');
+        document.querySelectorAll('.solo-tmb').forEach(e => e.style.display = meta ? 'none' : '');
+    }
+    document.querySelectorAll('input[name="Conexion.Proveedor"]').forEach(r => r.addEventListener('change', proveedor));
+    proveedor();
+</script>
 }

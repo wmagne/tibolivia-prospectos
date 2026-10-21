@@ -8,7 +8,7 @@ public record InfoNumero(string? Numero, string? NombreVerificado, string? Calid
 public record PlantillaMeta(string Nombre, string Idioma, string Estado, string Categoria);
 
 /// <summary>Consultas de solo lectura a la API de Meta para verificar la configuración de WhatsApp.</summary>
-public class DiagnosticoWhatsApp(HttpClient http, IOptions<WhatsAppOptions> opciones)
+public class DiagnosticoWhatsApp(HttpClient http, IOptionsSnapshot<WhatsAppOptions> opciones)
 {
     private WhatsAppOptions O => opciones.Value;
 

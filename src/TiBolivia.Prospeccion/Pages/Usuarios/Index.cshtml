@@ -4,7 +4,7 @@
 <h3>Usuarios del área comercial</h3>
 <div class="row g-3">
     <div class="col-lg-7"><div class="card p-3">
-        <table class="table table-sm mb-0">
+        <div class="table-responsive"><table class="table table-sm mb-0">
             <thead><tr><th>Nombre</th><th>Correo</th><th>Teléfono</th><th>Rol</th><th>Estado</th><th></th></tr></thead>
             <tbody>
             @foreach (var (u, esAdmin) in Model.Lista)
@@ -14,7 +14,7 @@
                     <td><form method="post" asp-page-handler="Activo" asp-route-id="@u.Id"><button class="btn btn-sm btn-link">@(u.Activo ? "Desactivar" : "Activar")</button></form></td></tr>
             }
             </tbody>
-        </table>
+        </table></div>
     </div></div>
     <div class="col-lg-5">
         <form method="post" class="card p-3">

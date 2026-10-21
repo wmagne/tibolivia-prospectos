@@ -1,14 +1,14 @@
 @page
 @model TiBolivia.Prospeccion.Pages.Campanas.IndexModel
 @{ ViewData["Title"] = "Campañas"; }
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h3 class="mb-0">Campañas</h3>
     <a asp-page="Editar" class="btn btn-primary">Nueva campaña</a>
 </div>
 <p class="text-muted small">Cada campaña es una secuencia de correos y WhatsApp que se envían automáticamente con días de espera entre pasos, en horario laboral.
     Si el prospecto responde por WhatsApp, su secuencia se pausa para que lo atienda un comercial.</p>
 <div class="card p-3">
-<table class="table table-sm mb-0">
+<div class="table-responsive"><table class="table table-sm mb-0">
     <thead><tr><th>Campaña</th><th>Servicio</th><th>Pasos</th><th>En curso</th><th>Inscritos</th><th>Enviados</th><th>Tasa de respuesta</th><th>Estado</th><th></th></tr></thead>
     <tbody>
     @foreach (var f in Model.Campanas)
@@ -23,5 +23,5 @@
         </tr>
     }
     </tbody>
-</table>
+</table></div>
 </div>

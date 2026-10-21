@@ -1,12 +1,12 @@
 @page
 @model TiBolivia.Prospeccion.Pages.Plantillas.IndexModel
 @{ ViewData["Title"] = "Plantillas"; }
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h3 class="mb-0">Plantillas de mensajes</h3>
     <a asp-page="Editar" class="btn btn-primary">Nueva plantilla</a>
 </div>
 <div class="card p-3">
-<table class="table table-sm mb-0">
+<div class="table-responsive"><table class="table table-sm mb-0">
     <thead><tr><th>Nombre</th><th>Canal</th><th>Asunto / Plantilla Meta</th></tr></thead>
     <tbody>
     @foreach (var p in Model.Plantillas)
@@ -14,5 +14,5 @@
         <tr><td><a asp-page="Editar" asp-route-id="@p.Id">@p.Nombre</a></td><td>@Etiquetas.Texto(p.Canal)</td><td>@(p.Canal == Canal.Email ? p.Asunto : p.WhatsAppPlantillaMeta)</td></tr>
     }
     </tbody>
-</table>
+</table></div>
 </div>

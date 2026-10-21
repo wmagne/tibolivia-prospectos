@@ -9,7 +9,7 @@
     <div class="col-md-2"><button class="btn btn-secondary w-100">Filtrar</button></div>
 </div></form>
 <div class="card p-3">
-<table class="table table-sm mb-0">
+<div class="table-responsive"><table class="table table-sm mb-0">
     <thead><tr><th>Fecha</th><th>Prospecto</th><th>Canal</th><th></th><th>Asunto / texto</th><th>Estado</th></tr></thead>
     <tbody>
     @foreach (var m in Model.Mensajes)
@@ -25,5 +25,5 @@
         </tr>
     }
     </tbody>
-</table>
+</table></div>
 </div>

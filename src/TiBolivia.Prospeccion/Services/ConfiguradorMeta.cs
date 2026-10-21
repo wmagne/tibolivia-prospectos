@@ -13,7 +13,7 @@ public record PerfilEmpresa(string? Acerca, string? Descripcion, string? Email, 
 /// Configura en Meta lo que se puede hacer por API: registrar el número, el perfil de empresa,
 /// crear las plantillas de las campañas, suscribir la app y conectar el webhook.
 /// </summary>
-public partial class ConfiguradorMeta(HttpClient http, IOptions<WhatsAppOptions> opciones)
+public partial class ConfiguradorMeta(HttpClient http, IOptionsSnapshot<WhatsAppOptions> opciones)
 {
     private WhatsAppOptions O => opciones.Value;
 

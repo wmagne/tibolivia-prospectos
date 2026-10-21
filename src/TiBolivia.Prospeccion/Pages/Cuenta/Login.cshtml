@@ -1,16 +1,22 @@
 @page
 @model TiBolivia.Prospeccion.Pages.Cuenta.LoginModel
 @{ ViewData["Title"] = "Ingresar"; }
-<div class="row justify-content-center mt-5">
-    <div class="col-md-4">
+<div class="row justify-content-center mt-4 mt-md-5">
+    <div class="col-12 col-sm-9 col-md-6 col-lg-4">
         <div class="card p-4">
-            <h4 class="mb-3">Ingresar</h4>
+            <div class="text-center mb-3">
+                <span class="logo fs-4 bg-primary text-white px-2">TI</span>
+                <h4 class="mt-2 mb-0">TI Bolivia · Prospección</h4>
+                <div class="text-muted small">Ingrese con su cuenta del equipo comercial</div>
+            </div>
             <form method="post">
                 <div asp-validation-summary="All" class="text-danger small"></div>
-                <div class="mb-3"><label class="form-label">Correo</label><input asp-for="Email" class="form-control" autofocus /></div>
-                <div class="mb-3"><label class="form-label">Contraseña</label><input asp-for="Password" class="form-control" /></div>
+                <div class="mb-3"><label class="form-label" asp-for="Email">Correo</label>
+                    <div class="input-group"><span class="input-group-text"><i class="bi bi-envelope"></i></span><input asp-for="Email" class="form-control" autofocus autocomplete="username" /></div></div>
+                <div class="mb-3"><label class="form-label" asp-for="Password">Contraseña</label>
+                    <div class="input-group"><span class="input-group-text"><i class="bi bi-lock"></i></span><input asp-for="Password" class="form-control" autocomplete="current-password" /></div></div>
                 <div class="form-check mb-3"><input asp-for="Recordarme" class="form-check-input" /><label class="form-check-label" asp-for="Recordarme">Recordarme</label></div>
-                <button class="btn btn-primary w-100">Ingresar</button>
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-box-arrow-in-right"></i> Ingresar</button>
             </form>
         </div>
     </div>

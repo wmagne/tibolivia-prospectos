@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using TiBolivia.Prospeccion.Data;
 using TiBolivia.Prospeccion.Domain;
 using TiBolivia.Prospeccion.Services;
@@ -51,11 +52,13 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<HorarioLaboral>();
 builder.Services.AddSingleton<RenderizadorPlantillas>();
 builder.Services.AddSingleton<IEnviadorEmail, EnviadorEmailSmtp>();
-// Proveedor de WhatsApp parametrizable: "WhatsApp:Proveedor" = "Meta" (por defecto) o "TextMeBot".
-if (string.Equals(builder.Configuration["WhatsApp:Proveedor"], ProveedoresWhatsApp.TextMeBot, StringComparison.OrdinalIgnoreCase))
-    builder.Services.AddHttpClient<IEnviadorWhatsApp, EnviadorWhatsAppTextMeBot>();
-else
-    builder.Services.AddHttpClient<IEnviadorWhatsApp, EnviadorWhatsAppCloud>();
+// Proveedor de WhatsApp parametrizable ("Meta" o "TextMeBot"), editable desde la pantalla WhatsApp sin reiniciar.
+builder.Services.AddSingleton<AjustesGuardados>();
+builder.Services.AddSingleton<IPostConfigureOptions<WhatsAppOptions>, AplicarAjustesGuardados>();
+builder.Services.AddSingleton<IPostConfigureOptions<ChatbotOptions>, AplicarAjustesGuardados>();
+builder.Services.AddHttpClient<EnviadorWhatsAppCloud>();
+builder.Services.AddHttpClient<EnviadorWhatsAppTextMeBot>();
+builder.Services.AddScoped<IEnviadorWhatsApp, EnviadorWhatsAppSegunProveedor>();
 builder.Services.AddHttpClient<IClienteChatbot, ClienteChatbotHttp>();
 builder.Services.AddHttpClient<DiagnosticoWhatsApp>();
 builder.Services.AddHttpClient<ConfiguradorMeta>();
@@ -83,7 +86,10 @@ if (builder.Configuration["DataProtection:Ruta"] is { Length: > 0 } rutaClaves)
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
+{
     await DatosIniciales.InicializarAsync(scope.ServiceProvider, app.Configuration);
+    await app.Services.GetRequiredService<AjustesGuardados>().RecargarAsync();
+}
 
 app.UseForwardedHeaders();
 if (!app.Environment.IsDevelopment())

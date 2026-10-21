@@ -19,7 +19,7 @@
         <div class="col-lg-7">
             <div class="card p-4">
                 <h5>Secuencia</h5>
-                <table class="table table-sm">
+                <div class="table-responsive"><table class="table table-sm">
                     <thead><tr><th>#</th><th>Espera</th><th>Canal</th><th>Plantilla</th><th></th></tr></thead>
                     <tbody>
                     @{ var acumulado = 0; }
@@ -35,7 +35,7 @@
                         </tr>
                     }
                     </tbody>
-                </table>
+                </table></div>
                 <form method="post" asp-page-handler="AgregarPaso" asp-route-id="@Model.Id" class="row g-2">
                     <div class="col-md-3"><div class="input-group"><span class="input-group-text">+</span><input name="diasEspera" type="number" min="0" value="@(Model.Pasos.Count == 0 ? 0 : 3)" class="form-control" /><span class="input-group-text">días</span></div></div>
                     <div class="col-md-6">

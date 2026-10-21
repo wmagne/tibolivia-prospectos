@@ -9,13 +9,80 @@ using TiBolivia.Prospeccion.Services;
 namespace TiBolivia.Prospeccion.Pages.Configuracion;
 
 public class WhatsAppModel(
-    IOptions<WhatsAppOptions> opciones,
-    IOptions<ChatbotOptions> chatbot,
+    IOptionsSnapshot<WhatsAppOptions> opciones,
+    IOptionsSnapshot<ChatbotOptions> chatbot,
     DiagnosticoWhatsApp diagnostico,
     IEnviadorWhatsApp enviador,
     RenderizadorPlantillas renderizador,
+    AjustesGuardados ajustes,
     AppDbContext db) : PageModel
 {
+    private static readonly HashSet<string> Secretos =
+        ["WhatsApp:AccessToken", "WhatsApp:AppSecret", "WhatsApp:TextMeBot:ApiKey", "Chatbot:ApiKey"];
+
+    /// <summary>Datos de conexión editables desde la pantalla. Los secretos vacíos no cambian el valor guardado.</summary>
+    public class FormConexion
+    {
+        public string Proveedor { get; set; } = ProveedoresWhatsApp.Meta;
+        public string? PhoneNumberId { get; set; }
+        public string? BusinessAccountId { get; set; }
+        public string? AccessToken { get; set; }
+        public string? AppId { get; set; }
+        public string? AppSecret { get; set; }
+        public string? VerifyToken { get; set; }
+        public bool RequerirConsentimiento { get; set; } = true;
+        public string? TextMeBotApiKey { get; set; }
+        public string? TextMeBotTokenWebhook { get; set; }
+        public int SegundosEntreMensajes { get; set; } = 8;
+        public string? ChatbotUrl { get; set; }
+        public string? ChatbotApiKey { get; set; }
+    }
+
+    [BindProperty] public FormConexion Conexion { get; set; } = new();
+    public bool TieneToken => !string.IsNullOrEmpty(O.AccessToken);
+    public bool TieneAppSecret => !string.IsNullOrEmpty(O.AppSecret);
+    public bool TieneTextMeBot => !string.IsNullOrEmpty(O.TextMeBot.ApiKey);
+    public bool TieneChatbotKey => !string.IsNullOrEmpty(chatbot.Value.ApiKey);
+
+    private void LlenarConexion() => Conexion = new FormConexion
+    {
+        Proveedor = O.EsMeta ? ProveedoresWhatsApp.Meta : ProveedoresWhatsApp.TextMeBot,
+        PhoneNumberId = O.PhoneNumberId, BusinessAccountId = O.BusinessAccountId, AppId = O.AppId,
+        VerifyToken = O.VerifyToken, RequerirConsentimiento = O.RequerirConsentimiento,
+        TextMeBotTokenWebhook = O.TextMeBot.TokenWebhook, SegundosEntreMensajes = O.TextMeBot.SegundosEntreMensajes,
+        ChatbotUrl = chatbot.Value.Url,
+    };
+
+    public async Task<IActionResult> OnPostGuardarAsync()
+    {
+        var c = Conexion;
+        string? Texto(string? v) => v?.Trim() ?? "";          // "" = volver al valor por defecto
+        string? Secreto(string? v) => string.IsNullOrWhiteSpace(v) ? null : v.Trim(); // vacío = no cambiar
+        if (c.ChatbotUrl is { Length: > 0 } u && !Uri.TryCreate(u.Trim(), UriKind.Absolute, out _))
+        {
+            TempData["Error"] = "La URL del chatbot no es válida (debe empezar con https://).";
+            return RedirectToPage();
+        }
+        await ajustes.GuardarAsync(new Dictionary<string, string?>
+        {
+            ["WhatsApp:Proveedor"] = c.Proveedor == ProveedoresWhatsApp.TextMeBot ? ProveedoresWhatsApp.TextMeBot : ProveedoresWhatsApp.Meta,
+            ["WhatsApp:PhoneNumberId"] = Texto(c.PhoneNumberId),
+            ["WhatsApp:BusinessAccountId"] = Texto(c.BusinessAccountId),
+            ["WhatsApp:AppId"] = Texto(c.AppId),
+            ["WhatsApp:VerifyToken"] = Texto(c.VerifyToken),
+            ["WhatsApp:RequerirConsentimiento"] = c.RequerirConsentimiento.ToString(),
+            ["WhatsApp:TextMeBot:TokenWebhook"] = Texto(c.TextMeBotTokenWebhook),
+            ["WhatsApp:TextMeBot:SegundosEntreMensajes"] = Math.Clamp(c.SegundosEntreMensajes, 3, 120).ToString(),
+            ["Chatbot:Url"] = Texto(c.ChatbotUrl),
+            ["WhatsApp:AccessToken"] = Secreto(c.AccessToken),
+            ["WhatsApp:AppSecret"] = Secreto(c.AppSecret),
+            ["WhatsApp:TextMeBot:ApiKey"] = Secreto(c.TextMeBotApiKey),
+            ["Chatbot:ApiKey"] = Secreto(c.ChatbotApiKey),
+        }, Secretos);
+        TempData["Ok"] = "Configuración de WhatsApp guardada y aplicada. Use \"Verificar ahora\" para probar la conexión.";
+        return RedirectToPage();
+    }
+
     public WhatsAppOptions O => opciones.Value;
     public bool ChatbotConfigurado => !string.IsNullOrWhiteSpace(chatbot.Value.Url);
     public string UrlWebhook => O.EsMeta
@@ -31,10 +98,15 @@ public class WhatsAppModel(
     [BindProperty] public string? Telefono { get; set; }
     [BindProperty] public int PlantillaId { get; set; }
 
-    public async Task OnGetAsync() => await CargarAsync();
+    public async Task OnGetAsync()
+    {
+        LlenarConexion();
+        await CargarAsync();
+    }
 
     public async Task<IActionResult> OnPostVerificarAsync()
     {
+        LlenarConexion();
         await CargarAsync();
         if (!O.EsMeta)
         {

@@ -5,7 +5,7 @@
     string Marca(bool ok) => ok ? "✅" : "❌";
     string ColorEstado(string e) => e switch { "APPROVED" => "success", "PENDING" or "IN_APPEAL" => "warning text-dark", "" => "light text-dark", _ => "danger" };
 }
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h3 class="mb-0">Asistente de configuración de Meta (WhatsApp)</h3>
     <a asp-page="WhatsApp" class="btn btn-outline-secondary">Ir a verificación y pruebas</a>
 </div>
@@ -72,7 +72,7 @@
     <h5>Paso 5 · Plantillas de las campañas</h5>
     <p class="small text-muted">Se crean en Meta como <b>Marketing</b>, con los textos del menú Plantillas y los botones "Sí, me interesa" / "Ahora no".
         Meta las revisa (de minutos a 24 h). Solo se crean las que no existen.</p>
-    <table class="table table-sm small">
+    <div class="table-responsive"><table class="table table-sm small">
         <thead><tr><th>Nombre en Meta</th><th>Texto que se enviará a revisión</th><th>Estado</th></tr></thead>
         <tbody>
         @foreach (var (p, estado) in Model.Plantillas)
@@ -87,7 +87,7 @@
             </tr>
         }
         </tbody>
-    </table>
+    </table></div>
     <div><button class="btn btn-primary" @(Model.DatosPlantillas ? "" : "disabled")>Crear en Meta las plantillas que faltan</button></div>
 </form>
 

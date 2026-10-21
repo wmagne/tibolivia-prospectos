@@ -1,75 +1,101 @@
 @page
 @model IndexModel
 @{ ViewData["Title"] = "Panel"; }
-<h3 class="mb-3">Panel comercial</h3>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h3 class="mb-0">Panel comercial</h3>
+    <div class="d-flex gap-2">
+        <a asp-page="/Tareas/Index" class="btn btn-outline-primary btn-sm"><i class="bi bi-check2-square"></i> Mis tareas</a>
+        <a asp-page="/Prospectos/Index" class="btn btn-primary btn-sm"><i class="bi bi-buildings"></i> Prospectos</a>
+    </div>
+</div>
+
 @if (Model.TareasVencidas + Model.TareasHoy > 0)
 {
-    <div class="alert alert-@(Model.TareasVencidas > 0 ? "danger" : "info") d-flex justify-content-between align-items-center">
-        <span>Tiene <b>@Model.TareasHoy</b> tarea(s) para hoy@(Model.TareasVencidas > 0 ? $" y {Model.TareasVencidas} vencida(s)" : "").</span>
+    <div class="alert alert-@(Model.TareasVencidas > 0 ? "danger" : "info") d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <span><i class="bi bi-alarm"></i> Tiene <b>@Model.TareasHoy</b> tarea(s) para hoy@(Model.TareasVencidas > 0 ? $" y {Model.TareasVencidas} vencida(s)" : "").</span>
         <a asp-page="/Tareas/Index" class="btn btn-sm btn-light">Ver mis tareas</a>
     </div>
 }
+
 <div class="row g-3 mb-3">
-    <div class="col-md-3"><div class="card p-3"><div class="text-muted small">Negocios en curso (Interesado → Propuesta)</div><div class="kpi">Bs @Model.ValorEnEmbudo.ToString("N0")</div></div></div>
-    <div class="col-md-3"><div class="card p-3"><div class="text-muted small">Ganado</div><div class="kpi text-success">Bs @Model.ValorGanado.ToString("N0")</div></div></div>
+    @{
+        var kpis = new (string Titulo, string Valor, string Icono, string Color)[]
+        {
+            ("Negocios en curso", $"Bs {Model.ValorEnEmbudo:N0}", "bi-graph-up-arrow", "text-primary"),
+            ("Ganado", $"Bs {Model.ValorGanado:N0}", "bi-trophy", "text-success"),
+            ("Prospectos", Model.TotalProspectos.ToString(), "bi-buildings", ""),
+            ("En secuencia", Model.InscripcionesActivas.ToString(), "bi-diagram-3", ""),
+            ("Enviados hoy", Model.EnviadosHoy.ToString(), "bi-send", ""),
+            ("Enviados (7 días)", Model.Enviados7Dias.ToString(), "bi-send-check", ""),
+            ("Respuestas (7 días)", Model.Respuestas7Dias.ToString(), "bi-reply", "text-success"),
+            ("Fallidos (7 días)", Model.Fallidos7Dias.ToString(), "bi-exclamation-octagon", "text-danger"),
+        };
+    }
+    @foreach (var k in kpis)
+    {
+        <div class="col-6 col-md-4 col-xl-3">
+            <div class="card kpi-card p-3 h-100">
+                <i class="bi @k.Icono kpi-icono"></i>
+                <div class="text-muted small">@k.Titulo</div>
+                <div class="kpi @k.Color">@k.Valor</div>
+            </div>
+        </div>
+    }
 </div>
-<div class="row g-3 mb-4">
-    <div class="col-md-2"><div class="card p-3"><div class="text-muted small">Prospectos</div><div class="kpi">@Model.TotalProspectos</div></div></div>
-    <div class="col-md-2"><div class="card p-3"><div class="text-muted small">Enviados hoy</div><div class="kpi">@Model.EnviadosHoy</div></div></div>
-    <div class="col-md-2"><div class="card p-3"><div class="text-muted small">Enviados (7 días)</div><div class="kpi">@Model.Enviados7Dias</div></div></div>
-    <div class="col-md-2"><div class="card p-3"><div class="text-muted small">Respuestas (7 días)</div><div class="kpi text-success">@Model.Respuestas7Dias</div></div></div>
-    <div class="col-md-2"><div class="card p-3"><div class="text-muted small">Fallidos (7 días)</div><div class="kpi text-danger">@Model.Fallidos7Dias</div></div></div>
-    <div class="col-md-2"><div class="card p-3"><div class="text-muted small">En secuencia</div><div class="kpi">@Model.InscripcionesActivas</div></div></div>
-</div>
+
 <div class="row g-3">
-    <div class="col-lg-7">
-        <div class="card p-3">
-            <h5>Respondieron y esperan atención</h5>
-            @if (Model.PorAtender.Count == 0) { <p class="text-muted mb-0">Nadie por atender. </p> }
+    <div class="col-12 col-lg-7">
+        <div class="card p-3 h-100">
+            <h5><i class="bi bi-chat-left-text text-success"></i> Respondieron y esperan atención</h5>
+            @if (Model.PorAtender.Count == 0) { <p class="text-muted mb-0">Nadie por atender por ahora.</p> }
             else
             {
-                <table class="table table-sm mb-0">
-                    <thead><tr><th>Empresa</th><th>Contacto</th><th>Asignado</th><th>Última respuesta</th></tr></thead>
-                    <tbody>
-                    @foreach (var p in Model.PorAtender)
-                    {
-                        <tr>
-                            <td><a asp-page="/Prospectos/Detalle" asp-route-id="@p.Id">@p.Empresa</a></td>
-                            <td>@p.NombreContacto</td>
-                            <td>@(p.AsignadoA?.NombreCompleto ?? "—")</td>
-                            <td>@p.UltimaRespuestaEn?.ToLocalTime().ToString("dd/MM HH:mm")</td>
-                        </tr>
-                    }
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead><tr><th>Empresa</th><th class="d-none d-md-table-cell">Contacto</th><th>Asignado</th><th>Respuesta</th></tr></thead>
+                        <tbody>
+                        @foreach (var p in Model.PorAtender)
+                        {
+                            <tr>
+                                <td><a asp-page="/Prospectos/Detalle" asp-route-id="@p.Id">@p.Empresa</a></td>
+                                <td class="d-none d-md-table-cell">@p.NombreContacto</td>
+                                <td class="small">@(p.AsignadoA?.NombreCompleto ?? "—")</td>
+                                <td class="text-nowrap small">@p.UltimaRespuestaEn?.ToLocalTime().ToString("dd/MM HH:mm")</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
             }
         </div>
     </div>
-    <div class="col-lg-5">
+    <div class="col-12 col-lg-5">
         <div class="card p-3 mb-3">
-            <h5>Embudo</h5>
+            <h5><i class="bi bi-funnel text-primary"></i> Embudo</h5>
             @foreach (var estado in Enum.GetValues<EstadoProspecto>())
             {
                 var n = Model.PorEstado.GetValueOrDefault(estado);
                 var pct = Model.TotalProspectos == 0 ? 0 : n * 100 / Model.TotalProspectos;
-                <div class="d-flex align-items-center mb-1">
-                    <a class="small" style="width:140px" asp-page="/Prospectos/Index" asp-route-estado="@estado">@Etiquetas.Texto(estado)</a>
-                    <div class="progress flex-grow-1" style="height:16px"><div class="progress-bar bg-@Etiquetas.Color(estado)" style="width:@pct%"></div></div>
-                    <span class="ms-2 small" style="width:40px">@n</span>
+                <div class="d-flex align-items-center mb-1 gap-2">
+                    <a class="small text-truncate" style="width:42%" asp-page="/Prospectos/Index" asp-route-estado="@estado">@Etiquetas.Texto(estado)</a>
+                    <div class="progress flex-grow-1" style="height:14px"><div class="progress-bar bg-@Etiquetas.Color(estado)" style="width:@pct%"></div></div>
+                    <span class="small text-end" style="width:2.5rem">@n</span>
                 </div>
             }
         </div>
         <div class="card p-3">
-            <h5>Campañas</h5>
-            <table class="table table-sm mb-0">
-                <thead><tr><th>Campaña</th><th>Activas</th><th>Pausadas</th><th>Completadas</th></tr></thead>
-                <tbody>
-                @foreach (var c in Model.Campanas)
-                {
-                    <tr><td>@c.Campana</td><td>@c.Activas</td><td>@c.Pausadas</td><td>@c.Completadas</td></tr>
-                }
-                </tbody>
-            </table>
+            <h5><i class="bi bi-megaphone text-primary"></i> Campañas</h5>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Campaña</th><th>Activas</th><th>Pausadas</th><th>Fin</th></tr></thead>
+                    <tbody>
+                    @foreach (var c in Model.Campanas)
+                    {
+                        <tr><td class="small">@c.Campana</td><td>@c.Activas</td><td>@c.Pausadas</td><td>@c.Completadas</td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>

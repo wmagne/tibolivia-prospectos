@@ -5,7 +5,7 @@
 <div class="row g-3">
     <div class="col-lg-7">
         <div class="card p-3">
-        <table class="table table-sm mb-0">
+        <div class="table-responsive"><table class="table table-sm mb-0">
             <thead><tr><th>Servicio</th><th>Descripción</th><th>Estado</th><th></th></tr></thead>
             <tbody>
             @foreach (var s in Model.Servicios)
@@ -14,7 +14,7 @@
                     <td><a asp-route-editar="@s.Id">Editar</a></td></tr>
             }
             </tbody>
-        </table>
+        </table></div>
         </div>
     </div>
     <div class="col-lg-5">
