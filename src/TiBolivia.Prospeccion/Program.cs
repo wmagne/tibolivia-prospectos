@@ -32,6 +32,7 @@ builder.Services.AddRazorPages(o =>
     o.Conventions.AuthorizeFolder("/");
     o.Conventions.AllowAnonymousToPage("/Cuenta/Login");
     o.Conventions.AllowAnonymousToPage("/Baja");
+    o.Conventions.AllowAnonymousToPage("/Privacidad");
     o.Conventions.AllowAnonymousToPage("/Error");
     // Configuración de campañas, plantillas, servicios y usuarios: solo administradores.
     foreach (var carpeta in new[] { "/Campanas", "/Plantillas", "/Servicios", "/Usuarios", "/Configuracion" })

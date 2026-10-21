@@ -1,0 +1,42 @@
+@page "/privacidad"
+@inject Microsoft.Extensions.Options.IOptions<TiBolivia.Prospeccion.Services.SmtpOptions> Smtp
+@{ ViewData["Title"] = "Política de privacidad"; var correo = Smtp.Value.RemitenteEmail; }
+<div class="row justify-content-center"><div class="col-lg-8"><div class="card p-4">
+<h3>Política de privacidad – TI Bolivia</h3>
+<p class="text-muted small">Última actualización: @DateTime.Today.ToString("dd/MM/yyyy")</p>
+
+<h5>1. Quiénes somos</h5>
+<p>TI Bolivia es una empresa boliviana de servicios de tecnología (sistemas para farmacias, facturación electrónica y software a medida).
+Para cualquier consulta sobre sus datos escríbanos a <a href="mailto:@correo">@correo</a>.</p>
+
+<h5>2. Qué datos tratamos</h5>
+<p>Datos de contacto empresarial: nombre de la empresa, nombre y cargo de la persona de contacto, correo electrónico, número de teléfono / WhatsApp,
+ciudad y rubro, además de los mensajes que usted nos envía y el historial de nuestras comunicaciones.</p>
+
+<h5>3. Para qué los usamos</h5>
+<p>Únicamente para presentarle nuestros servicios, responder sus consultas, coordinar demostraciones y dar seguimiento comercial.
+No vendemos ni alquilamos sus datos a terceros.</p>
+
+<h5>4. Cómo nos comunicamos</h5>
+<p>Por correo electrónico y por WhatsApp. Usamos WhatsApp solo con personas que aceptaron recibir mensajes o que nos escribieron primero.
+Las respuestas por WhatsApp pueden ser atendidas por nuestro asistente automático y luego por una persona de nuestro equipo.</p>
+
+<h5>5. Proveedores que intervienen</h5>
+<p>Meta Platforms (WhatsApp Business), nuestro proveedor de correo electrónico y de alojamiento del sistema. Cada uno trata los datos
+solo para prestar su servicio y bajo sus propias políticas de privacidad.</p>
+
+<h5>6. Cómo dejar de recibir mensajes</h5>
+<ul>
+    <li><b>Correo:</b> use el enlace "darse de baja" incluido en cada correo.</li>
+    <li><b>WhatsApp:</b> responda <b>BAJA</b> en cualquier momento.</li>
+</ul>
+<p>Dejaremos de contactarle de inmediato.</p>
+
+<h5>7. Sus derechos</h5>
+<p>Puede pedirnos en cualquier momento ver, corregir o eliminar sus datos escribiendo a <a href="mailto:@correo">@correo</a>.
+Atenderemos su solicitud en un plazo máximo de 15 días hábiles.</p>
+
+<h5>8. Conservación y seguridad</h5>
+<p>Conservamos sus datos mientras exista una relación comercial o hasta que solicite su eliminación. El acceso está restringido al
+personal autorizado de TI Bolivia mediante usuarios con contraseña.</p>
+</div></div></div>
