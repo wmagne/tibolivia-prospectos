@@ -1,0 +1,46 @@
+# Sistema de Prospección TIBolivia en el servidor Docker compartido (el Caddy compartido da el HTTPS).
+# Lo instala/actualiza deploy/servidor/desplegar.sh; las claves están en .env y app.env (no en git).
+name: tibolivia-prospectos
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: tibolivia-prospectos-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: tibolivia_prospeccion
+      POSTGRES_USER: tibolivia
+      POSTGRES_PASSWORD: ${PG_CLAVE}
+    volumes:
+      - datos:/var/lib/postgresql/data
+    networks: [interna]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tibolivia -d tibolivia_prospeccion"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build:
+      context: ${CODIGO_DIR:-/opt/tibolivia-prospectos-src}
+      dockerfile: Dockerfile
+    image: tibolivia-prospectos-app:latest
+    container_name: tibolivia-prospectos-app
+    restart: unless-stopped
+    env_file: app.env
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - claves:/claves
+    networks: [interna, caddy]
+
+networks:
+  interna: {}
+  caddy:
+    external: true
+    name: ${RED_CADDY:-estacionacai_default}
+
+volumes:
+  datos:
+  claves:

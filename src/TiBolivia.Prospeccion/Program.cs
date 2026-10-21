@@ -98,6 +98,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();
+app.MapGet("/health", () => Results.Text("ok")).AllowAnonymous();
 app.MapWhatsAppWebhook();
 app.MapTextMeBotWebhook();
 app.MapRazorPages().WithStaticAssets();

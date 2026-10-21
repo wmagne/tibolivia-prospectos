@@ -1,0 +1,97 @@
+name: Desplegar en servidor
+
+# Se ejecuta a mano (pestaña Actions → "Desplegar en servidor" → Run workflow).
+# Mismo servidor y esquema que crm.tibolivia.com (Docker + Caddy compartido).
+# Secretos del repositorio (Settings → Secrets and variables → Actions):
+#   SERVIDOR_CLAVE_SSH       (obligatorio) contraseña de root del VPS
+#   PROSPECTOS_ADMIN_CLAVE   (obligatorio en la primera instalación) contraseña de admin@tibolivia.com, mín. 8 caracteres
+#   SMTP_CLAVE               (opcional) contraseña de comercial@tibolivia.com
+#   WHATSAPP_ACCESS_TOKEN, WHATSAPP_APP_SECRET, TEXTMEBOT_API_KEY (opcionales)
+# Variables (opcionales): WHATSAPP_PROVEEDOR, WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_BUSINESS_ACCOUNT_ID, WHATSAPP_APP_ID, CHATBOT_URL
+on:
+  workflow_dispatch:
+    inputs:
+      accion:
+        description: "diagnostico (solo lectura) o instalar (instala o actualiza)"
+        required: true
+        default: diagnostico
+        type: choice
+        options: [diagnostico, instalar]
+      dominio:
+        description: Dominio del sistema
+        required: true
+        default: prospectos.tibolivia.com
+
+concurrency: desplegar-prospectos
+
+env:
+  SERVIDOR: ${{ vars.SERVIDOR_IP || '158.220.123.156' }}
+  USUARIO: ${{ vars.SERVIDOR_USUARIO || 'root' }}
+
+jobs:
+  desplegar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verificar secretos
+        env:
+          CLAVE_SSH: ${{ secrets.SERVIDOR_CLAVE_SSH }}
+        run: |
+          [ -n "$CLAVE_SSH" ] || { echo "::error::Falta el secreto SERVIDOR_CLAVE_SSH (Settings → Secrets and variables → Actions)"; exit 1; }
+
+      - name: Preparar SSH
+        run: |
+          sudo apt-get install -y -qq sshpass >/dev/null
+          mkdir -p ~/.ssh && ssh-keyscan -T 20 "$SERVIDOR" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Diagnóstico del servidor (solo lectura)
+        env:
+          SSHPASS: ${{ secrets.SERVIDOR_CLAVE_SSH }}
+        run: sshpass -e ssh "$USUARIO@$SERVIDOR" "bash -s -- '${{ inputs.dominio }}'" < deploy/servidor/diagnostico.sh
+
+      - name: Copiar el código al servidor
+        if: inputs.accion == 'instalar'
+        env:
+          SSHPASS: ${{ secrets.SERVIDOR_CLAVE_SSH }}
+        run: |
+          tar czf /tmp/prospectos.tgz --exclude=.git --exclude=bin --exclude=obj .
+          sshpass -e scp /tmp/prospectos.tgz "$USUARIO@$SERVIDOR:/tmp/prospectos.tgz"
+          sshpass -e ssh "$USUARIO@$SERVIDOR" 'rm -rf /opt/tibolivia-prospectos-src && mkdir -p /opt/tibolivia-prospectos-src && tar xzf /tmp/prospectos.tgz --no-same-owner -C /opt/tibolivia-prospectos-src && rm /tmp/prospectos.tgz'
+
+      - name: Instalar / actualizar
+        if: inputs.accion == 'instalar'
+        env:
+          SSHPASS: ${{ secrets.SERVIDOR_CLAVE_SSH }}
+          ADMIN_CLAVE: ${{ secrets.PROSPECTOS_ADMIN_CLAVE }}
+          SMTP_CLAVE: ${{ secrets.SMTP_CLAVE }}
+          WHATSAPP_ACCESS_TOKEN: ${{ secrets.WHATSAPP_ACCESS_TOKEN }}
+          WHATSAPP_APP_SECRET: ${{ secrets.WHATSAPP_APP_SECRET }}
+          TEXTMEBOT_API_KEY: ${{ secrets.TEXTMEBOT_API_KEY }}
+          WHATSAPP_PROVEEDOR: ${{ vars.WHATSAPP_PROVEEDOR }}
+          WHATSAPP_PHONE_NUMBER_ID: ${{ vars.WHATSAPP_PHONE_NUMBER_ID }}
+          WHATSAPP_BUSINESS_ACCOUNT_ID: ${{ vars.WHATSAPP_BUSINESS_ACCOUNT_ID }}
+          WHATSAPP_APP_ID: ${{ vars.WHATSAPP_APP_ID }}
+          CHATBOT_URL: ${{ vars.CHATBOT_URL }}
+        run: |
+          # Los secretos viajan por la entrada estándar (no quedan en la línea de comandos del servidor).
+          {
+            for v in ADMIN_CLAVE SMTP_CLAVE WHATSAPP_ACCESS_TOKEN WHATSAPP_APP_SECRET TEXTMEBOT_API_KEY \
+                     WHATSAPP_PROVEEDOR WHATSAPP_PHONE_NUMBER_ID WHATSAPP_BUSINESS_ACCOUNT_ID WHATSAPP_APP_ID CHATBOT_URL; do
+              printf '%s\n' "${!v}"
+            done
+          } | sshpass -e ssh "$USUARIO@$SERVIDOR" "
+            for v in ADMIN_CLAVE SMTP_CLAVE WHATSAPP_ACCESS_TOKEN WHATSAPP_APP_SECRET TEXTMEBOT_API_KEY \
+                     WHATSAPP_PROVEEDOR WHATSAPP_PHONE_NUMBER_ID WHATSAPP_BUSINESS_ACCOUNT_ID WHATSAPP_APP_ID CHATBOT_URL; do
+              IFS= read -r \$v || true; export \$v
+            done
+            bash /opt/tibolivia-prospectos-src/deploy/servidor/desplegar.sh '${{ inputs.dominio }}'"
+
+      - name: Verificar el sitio
+        if: inputs.accion == 'instalar'
+        run: |
+          for url in "https://${{ inputs.dominio }}/health" "http://${{ inputs.dominio }}/health"; do
+            if curl -fsS --max-time 20 "$url"; then echo; echo "Sitio respondiendo en $url"; exit 0; fi
+          done
+          echo "::warning::El sitio aún no responde por el dominio (¿falta el registro DNS de ${{ inputs.dominio }}?)"
