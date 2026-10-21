@@ -136,6 +136,10 @@ Use `telefono` como identificador de la conversación para mantener el contexto 
 
 ## 3. Instalación
 
+**Servidor en producción (recomendado):** vea **[docs/INSTALACION-SERVIDOR.md](docs/INSTALACION-SERVIDOR.md)**: un comando instala todo con Docker, HTTPS automático y respaldo diario.
+
+**En una PC (pruebas):**
+
 ```bash
 # Requisitos: .NET SDK 10 y PostgreSQL
 git clone https://github.com/wmagne/tibolivia-prospectos.git SistemaProspectos

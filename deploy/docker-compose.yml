@@ -1,0 +1,64 @@
+# Sistema de Prospección TI Bolivia en producción: base de datos + sistema + HTTPS automático (Caddy).
+# Se levanta con: docker compose --env-file .env up -d --build   (desde la carpeta deploy)
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: tibolivia_prospeccion
+      POSTGRES_USER: tibolivia
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD}
+    volumes:
+      - datos_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tibolivia -d tibolivia_prospeccion"]
+      interval: 10s
+      retries: 10
+
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__Default: Host=db;Port=5432;Database=tibolivia_prospeccion;Username=tibolivia;Password=${POSTGRES_PASSWORD}
+      Admin__Email: ${ADMIN_EMAIL:-admin@tibolivia.com}
+      Admin__Password: ${ADMIN_PASSWORD:?Falta ADMIN_PASSWORD}
+      Campanas__UrlPublica: https://${DOMINIO:?Falta DOMINIO}
+      Smtp__Password: ${SMTP_PASSWORD:-}
+      WhatsApp__Proveedor: ${WHATSAPP_PROVEEDOR:-Meta}
+      WhatsApp__PhoneNumberId: ${WHATSAPP_PHONE_NUMBER_ID:-}
+      WhatsApp__BusinessAccountId: ${WHATSAPP_BUSINESS_ACCOUNT_ID:-}
+      WhatsApp__AccessToken: ${WHATSAPP_ACCESS_TOKEN:-}
+      WhatsApp__AppId: ${WHATSAPP_APP_ID:-}
+      WhatsApp__AppSecret: ${WHATSAPP_APP_SECRET:-}
+      WhatsApp__VerifyToken: ${WHATSAPP_VERIFY_TOKEN:-}
+      WhatsApp__TextMeBot__ApiKey: ${TEXTMEBOT_API_KEY:-}
+      WhatsApp__TextMeBot__TokenWebhook: ${TEXTMEBOT_TOKEN_WEBHOOK:-}
+      Chatbot__Url: ${CHATBOT_URL:-}
+      Chatbot__ApiKey: ${CHATBOT_API_KEY:-}
+    volumes:
+      - claves:/claves
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on: [app]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMINIO: ${DOMINIO}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_datos:/data
+      - caddy_config:/config
+
+volumes:
+  datos_db:
+  claves:
+  caddy_datos:
+  caddy_config:

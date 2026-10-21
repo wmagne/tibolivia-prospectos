@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -73,6 +74,10 @@ builder.Services.Configure<ForwardedHeadersOptions>(o =>
     o.KnownIPNetworks.Clear();
     o.KnownProxies.Clear();
 });
+
+// En el servidor (Docker) las claves de sesión se guardan en un volumen: así los usuarios no pierden la sesión al reiniciar.
+if (builder.Configuration["DataProtection:Ruta"] is { Length: > 0 } rutaClaves)
+    builder.Services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(rutaClaves)).SetApplicationName("TiBolivia.Prospeccion");
 
 var app = builder.Build();
 
