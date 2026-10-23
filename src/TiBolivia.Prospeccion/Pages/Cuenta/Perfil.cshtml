@@ -6,7 +6,7 @@
 <div class="row"><div class="col-12 col-md-8 col-lg-6">
 <form method="post" class="card p-4">
     <div asp-validation-summary="All" class="text-danger small"></div>
-    <div class="mb-3"><label class="form-label">Correo (usuario)</label><input value="@Model.Email" class="form-control" disabled /></div>
+    <div class="mb-3"><label class="form-label">Correo <span class="text-muted small">(también es su usuario para ingresar)</span></label><input asp-for="Email" class="form-control" /></div>
     <div class="mb-3"><label class="form-label">Nombre completo</label><input asp-for="NombreCompleto" class="form-control" /></div>
     <div class="mb-3"><label class="form-label">Teléfono / WhatsApp</label><input asp-for="Telefono" class="form-control" placeholder="+591 7xxxxxxx" /></div>
     <hr />

@@ -13,7 +13,7 @@ public class PerfilModel(UserManager<Usuario> usuarios, SignInManager<Usuario> s
     [BindProperty] public string? Telefono { get; set; }
     [BindProperty, DataType(DataType.Password)] public string? PasswordActual { get; set; }
     [BindProperty, DataType(DataType.Password), MinLength(8, ErrorMessage = "La nueva contraseña debe tener al menos 8 caracteres")] public string? NuevaPassword { get; set; }
-    public string Email { get; private set; } = "";
+    [BindProperty, Required(ErrorMessage = "El correo es obligatorio"), EmailAddress(ErrorMessage = "Correo inválido")] public string Email { get; set; } = "";
 
     public async Task<IActionResult> OnGetAsync()
     {
@@ -27,13 +27,19 @@ public class PerfilModel(UserManager<Usuario> usuarios, SignInManager<Usuario> s
     {
         var u = await usuarios.GetUserAsync(User);
         if (u is null) return Challenge();
-        Email = u.Email ?? "";
+        var otro = await usuarios.FindByEmailAsync(Email.Trim());
+        if (otro is not null && otro.Id != u.Id) ModelState.AddModelError(nameof(Email), "Ya existe un usuario con ese correo.");
         if (!string.IsNullOrWhiteSpace(NuevaPassword) && string.IsNullOrWhiteSpace(PasswordActual))
             ModelState.AddModelError(nameof(PasswordActual), "Escriba su contraseña actual para cambiarla.");
         if (!ModelState.IsValid) return Page();
 
         u.NombreCompleto = NombreCompleto.Trim();
         u.PhoneNumber = string.IsNullOrWhiteSpace(Telefono) ? null : Telefono.Trim();
+        if (!string.Equals(u.Email, Email.Trim(), StringComparison.OrdinalIgnoreCase))
+        {
+            u.Email = Email.Trim();
+            u.UserName = Email.Trim(); // el correo es también el usuario para ingresar
+        }
         var r = await usuarios.UpdateAsync(u);
         if (r.Succeeded && !string.IsNullOrWhiteSpace(NuevaPassword))
             r = await usuarios.ChangePasswordAsync(u, PasswordActual!, NuevaPassword);

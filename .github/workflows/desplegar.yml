@@ -12,15 +12,23 @@ on:
   workflow_dispatch:
     inputs:
       accion:
-        description: "diagnostico (solo lectura) o instalar (instala o actualiza)"
+        description: "diagnostico (solo lectura), instalar (instala o actualiza) o cambiar-correo (correo de ingreso de un usuario)"
         required: true
         default: diagnostico
         type: choice
-        options: [diagnostico, instalar]
+        options: [diagnostico, instalar, cambiar-correo]
       dominio:
         description: Dominio del sistema
         required: true
         default: prospectos.tibolivia.com
+      correo_actual:
+        description: "Solo para cambiar-correo: correo actual del usuario"
+        required: false
+        default: admin@tibolivia.com
+      correo_nuevo:
+        description: "Solo para cambiar-correo: correo nuevo"
+        required: false
+        default: ""
 
 concurrency: desplegar-prospectos
 
@@ -50,6 +58,17 @@ jobs:
         env:
           SSHPASS: ${{ secrets.SERVIDOR_CLAVE_SSH }}
         run: sshpass -e ssh "$USUARIO@$SERVIDOR" "bash -s -- '${{ inputs.dominio }}'" < deploy/servidor/diagnostico.sh
+
+      - name: Cambiar el correo de un usuario
+        if: inputs.accion == 'cambiar-correo'
+        env:
+          SSHPASS: ${{ secrets.SERVIDOR_CLAVE_SSH }}
+          ACTUAL: ${{ inputs.correo_actual }}
+          NUEVO: ${{ inputs.correo_nuevo }}
+        run: |
+          [ -n "$NUEVO" ] || { echo "::error::Indique correo_nuevo"; exit 1; }
+          # Los correos viajan como argumentos escapados; el script los valida antes de usarlos.
+          sshpass -e ssh "$USUARIO@$SERVIDOR" "bash -s -- $(printf '%q' "$ACTUAL") $(printf '%q' "$NUEVO")" < deploy/servidor/cambiar-correo-admin.sh
 
       - name: Copiar el código al servidor
         if: inputs.accion == 'instalar'
