@@ -1,0 +1,20 @@
+@page
+@model TiBolivia.Prospeccion.Pages.Cuenta.PerfilModel
+@{ ViewData["Title"] = "Mi perfil"; }
+<h3>Mi perfil</h3>
+<p class="text-muted small">Su nombre, correo y teléfono aparecen en la firma de los correos y WhatsApp de sus prospectos.</p>
+<div class="row"><div class="col-12 col-md-8 col-lg-6">
+<form method="post" class="card p-4">
+    <div asp-validation-summary="All" class="text-danger small"></div>
+    <div class="mb-3"><label class="form-label">Correo (usuario)</label><input value="@Model.Email" class="form-control" disabled /></div>
+    <div class="mb-3"><label class="form-label">Nombre completo</label><input asp-for="NombreCompleto" class="form-control" /></div>
+    <div class="mb-3"><label class="form-label">Teléfono / WhatsApp</label><input asp-for="Telefono" class="form-control" placeholder="+591 7xxxxxxx" /></div>
+    <hr />
+    <h6>Cambiar contraseña <span class="text-muted small fw-normal">(opcional)</span></h6>
+    <div class="row g-2 mb-3">
+        <div class="col-12 col-sm-6"><label class="form-label small">Contraseña actual</label><input asp-for="PasswordActual" class="form-control" autocomplete="current-password" /></div>
+        <div class="col-12 col-sm-6"><label class="form-label small">Nueva contraseña</label><input asp-for="NuevaPassword" class="form-control" autocomplete="new-password" /></div>
+    </div>
+    <div><button class="btn btn-primary"><i class="bi bi-save"></i> Guardar</button></div>
+</form>
+</div></div>

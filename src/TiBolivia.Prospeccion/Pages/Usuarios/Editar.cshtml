@@ -1,0 +1,16 @@
+@page "{id}"
+@model TiBolivia.Prospeccion.Pages.Usuarios.EditarModel
+@{ ViewData["Title"] = "Editar usuario"; }
+<h3>Editar usuario</h3>
+<div class="row"><div class="col-12 col-md-8 col-lg-6">
+<form method="post" class="card p-4">
+    <div asp-validation-summary="All" class="text-danger small"></div>
+    <div class="mb-3"><label class="form-label">Nombre completo <span class="text-muted small">(firma: {{Comercial}})</span></label><input asp-for="NombreCompleto" class="form-control" /></div>
+    <div class="mb-3"><label class="form-label">Correo <span class="text-muted small">(usuario para ingresar y {{EmailComercial}})</span></label><input asp-for="Email" class="form-control" /></div>
+    <div class="mb-3"><label class="form-label">Teléfono / WhatsApp <span class="text-muted small">({{TelefonoComercial}})</span></label><input asp-for="Telefono" class="form-control" placeholder="+591 7xxxxxxx" /></div>
+    <div class="mb-3"><label class="form-label">Nueva contraseña <span class="text-muted small">(vacía = no cambiar)</span></label><input asp-for="NuevaPassword" type="password" class="form-control" autocomplete="new-password" /></div>
+    <div class="form-check mb-3"><input asp-for="EsAdmin" class="form-check-input" disabled="@Model.EsUnoMismo" /><label asp-for="EsAdmin" class="form-check-label">Administrador</label>
+        @if (Model.EsUnoMismo) { <input type="hidden" asp-for="EsAdmin" /> <div class="form-text">No puede quitarse el rol de administrador a sí mismo.</div> }</div>
+    <div class="d-flex gap-2"><button class="btn btn-primary"><i class="bi bi-save"></i> Guardar</button><a asp-page="Index" class="btn btn-link">Cancelar</a></div>
+</form>
+</div></div>

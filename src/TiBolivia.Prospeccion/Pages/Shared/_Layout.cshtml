@@ -63,6 +63,7 @@
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li><span class="dropdown-item-text small text-muted">@(esAdmin ? "Administrador" : "Comercial")</span></li>
+                                <li><a class="dropdown-item" asp-page="/Cuenta/Perfil"><i class="bi bi-person-gear"></i> Mi perfil</a></li>
                                 <li><hr class="dropdown-divider" /></li>
                                 <li><form method="post" asp-page="/Cuenta/Logout"><button class="dropdown-item"><i class="bi bi-box-arrow-right"></i> Salir</button></form></li>
                             </ul>

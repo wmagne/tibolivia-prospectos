@@ -19,7 +19,8 @@ public static class DatosIniciales
 
         var usuarios = sp.GetRequiredService<UserManager<Usuario>>();
         var emailAdmin = config["Admin:Email"] ?? "admin@tibolivia.com";
-        if (await usuarios.FindByEmailAsync(emailAdmin) is null)
+        // Se crea solo si no hay ningún administrador (el correo del administrador se puede cambiar desde Usuarios).
+        if ((await usuarios.GetUsersInRoleAsync(Roles.Admin)).Count == 0 && await usuarios.FindByEmailAsync(emailAdmin) is null)
         {
             var admin = new Usuario { UserName = emailAdmin, Email = emailAdmin, NombreCompleto = config["Admin:Nombre"] ?? "Administrador", EmailConfirmed = true };
             var r = await usuarios.CreateAsync(admin, config["Admin:Password"] ?? throw new InvalidOperationException("Configure Admin:Password"));

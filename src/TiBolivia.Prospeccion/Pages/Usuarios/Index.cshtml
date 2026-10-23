@@ -2,6 +2,7 @@
 @model TiBolivia.Prospeccion.Pages.Usuarios.IndexModel
 @{ ViewData["Title"] = "Usuarios"; }
 <h3>Usuarios del área comercial</h3>
+<p class="text-muted small">El nombre, el correo y el teléfono de cada usuario aparecen en la firma de los mensajes de sus prospectos ({{Comercial}}, {{EmailComercial}}, {{TelefonoComercial}}).</p>
 <div class="row g-3">
     <div class="col-lg-7"><div class="card p-3">
         <div class="table-responsive"><table class="table table-sm mb-0">
@@ -11,7 +12,8 @@
             {
                 <tr><td>@u.NombreCompleto</td><td>@u.Email</td><td>@u.PhoneNumber</td><td>@(esAdmin ? "Administrador" : "Comercial")</td>
                     <td>@(u.Activo ? "Activo" : "Inactivo")</td>
-                    <td><form method="post" asp-page-handler="Activo" asp-route-id="@u.Id"><button class="btn btn-sm btn-link">@(u.Activo ? "Desactivar" : "Activar")</button></form></td></tr>
+                    <td class="text-nowrap"><a asp-page="Editar" asp-route-id="@u.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i> Editar</a>
+                        <form method="post" asp-page-handler="Activo" asp-route-id="@u.Id" class="d-inline"><button class="btn btn-sm btn-link">@(u.Activo ? "Desactivar" : "Activar")</button></form></td></tr>
             }
             </tbody>
         </table></div>
