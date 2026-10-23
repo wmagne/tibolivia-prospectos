@@ -11,3 +11,10 @@ echo "== Caddyfile (sitios)"; grep -oE '^[a-z0-9.-]+\.[a-z]+[[:space:]]*\{' /opt
 grep -q '^(comun)' /opt/estacionacai/Caddyfile 2>/dev/null && echo "(snippet 'comun' disponible)"
 echo "== Prospección instalada"; docker ps --filter name=tibolivia-prospectos --format '{{.Names}}: {{.Status}}'; ls /opt/tibolivia-prospectos 2>/dev/null
 echo "== https://$DOMINIO/health -> $(curl -s -m 15 "https://$DOMINIO/health")"
+if docker ps --format '{{.Names}}' | grep -qx tibolivia-prospectos-db; then
+  echo "== Usuarios del sistema (correo | nombre | teléfono | rol | activo)"
+  docker exec tibolivia-prospectos-db psql -U tibolivia -d tibolivia_prospeccion -tA -F ' | ' -c \
+    'SELECT u."Email", u."NombreCompleto", coalesce(u."PhoneNumber", $$-$$), coalesce(string_agg(r."Name", $$,$$), $$-$$), u."Activo"
+       FROM "AspNetUsers" u LEFT JOIN "AspNetUserRoles" ur ON ur."UserId" = u."Id" LEFT JOIN "AspNetRoles" r ON r."Id" = ur."RoleId"
+      GROUP BY u."Id" ORDER BY u."Email";'
+fi
