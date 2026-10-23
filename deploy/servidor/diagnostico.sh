@@ -18,3 +18,20 @@ if docker ps --format '{{.Names}}' | grep -qx tibolivia-prospectos-db; then
        FROM "AspNetUsers" u LEFT JOIN "AspNetUserRoles" ur ON ur."UserId" = u."Id" LEFT JOIN "AspNetRoles" r ON r."Id" = ur."RoleId"
       GROUP BY u."Id" ORDER BY u."Email";'
 fi
+if docker ps --format '{{.Names}}' | grep -qx tibolivia-prospectos-db; then
+  echo "== Configuración de WhatsApp guardada desde la web (las claves cifradas no se muestran)"
+  docker exec -i tibolivia-prospectos-db psql -U tibolivia -d tibolivia_prospeccion -tA -F ' | ' <<'SQL' 2>/dev/null
+SELECT "Clave",
+       CASE WHEN "Cifrado" THEN '(guardado cifrado)'
+            WHEN "Clave" IN ('WhatsApp:VerifyToken', 'WhatsApp:TextMeBot:TokenWebhook') THEN '(definido)'
+            ELSE "Valor" END,
+       to_char("ActualizadoEn" - interval '4 hours', 'DD/MM HH24:MI')
+  FROM "Ajustes" ORDER BY 1;
+SQL
+  echo "== Mensajes de WhatsApp registrados"
+  docker exec -i tibolivia-prospectos-db psql -U tibolivia -d tibolivia_prospeccion -tA <<'SQL' 2>/dev/null
+SELECT "Direccion" || ' ' || "Estado" || ': ' || count(*) FROM "Mensajes" WHERE "Canal" = 'WhatsApp' GROUP BY "Direccion", "Estado";
+SQL
+fi
+echo "== Últimos avisos del sistema sobre WhatsApp/Meta (24 h)"
+docker logs --since 24h tibolivia-prospectos-app 2>&1 | grep -iE "whatsapp|meta respondi|graph" | tail -10 || true
