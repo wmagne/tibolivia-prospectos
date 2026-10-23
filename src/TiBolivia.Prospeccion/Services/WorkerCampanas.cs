@@ -13,6 +13,7 @@ public class WorkerCampanas(IServiceScopeFactory scopes, IOptions<CampanasOption
             try
             {
                 using var scope = scopes.CreateScope();
+                await scope.ServiceProvider.GetRequiredService<InscripcionAutomatica>().EjecutarAsync(ct);
                 var motor = scope.ServiceProvider.GetRequiredService<MotorCampanas>();
                 var procesados = await motor.ProcesarPendientesAsync(ct);
                 if (procesados > 0) log.LogInformation("Motor de campañas: {Cantidad} envíos procesados", procesados);

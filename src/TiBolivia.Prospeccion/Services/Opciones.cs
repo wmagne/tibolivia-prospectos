@@ -101,6 +101,15 @@ public class CampanasOptions
     public int MaxIntentos { get; set; } = 3;
     /// <summary>URL pública del sistema (para enlaces de baja en los correos).</summary>
     public string UrlPublica { get; set; } = "https://localhost:7058";
+    public AutoInscripcionOptions AutoInscripcion { get; set; } = new();
+}
+
+/// <summary>Inscripción gradual de los prospectos nuevos con correo en una campaña (ver InscripcionAutomatica).</summary>
+public class AutoInscripcionOptions
+{
+    public bool Habilitada { get; set; }
+    public string Campana { get; set; } = "Publicidad por rubro (correo)";
+    public int MaximoPorDia { get; set; } = 40;
 }
 
 public record ResultadoEnvio(bool Exito, string? ProveedorId, string? Error)

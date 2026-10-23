@@ -64,6 +64,7 @@ builder.Services.AddHttpClient<DiagnosticoWhatsApp>();
 builder.Services.AddHttpClient<ConfiguradorMeta>();
 builder.Services.AddScoped<MotorCampanas>();
 builder.Services.AddScoped<ServicioInscripciones>();
+builder.Services.AddScoped<InscripcionAutomatica>();
 builder.Services.AddScoped<LectorRespuestasEmail>();
 builder.Services.AddScoped<ImportadorProspectos>();
 if (builder.Configuration.GetValue("Campanas:WorkerHabilitado", true))
