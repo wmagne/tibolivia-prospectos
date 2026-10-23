@@ -7,7 +7,7 @@ namespace TiBolivia.Prospeccion.Services;
 
 /// <summary>
 /// Inscribe de a poco, en horario laboral, a los prospectos con correo que todavía no están en ninguna campaña.
-/// El cupo diario se reparte entre las horas de la jornada para no enviar todo de golpe (cuida la reputación del servidor de correo).
+/// El cupo diario se reparte por hora de la jornada para no enviar todo de golpe (cuida la reputación del servidor de correo).
 /// Se detiene sola si la campaña se desactiva.
 /// </summary>
 public class InscripcionAutomatica(AppDbContext db, ServicioInscripciones inscripciones, HorarioLaboral horario,
@@ -22,14 +22,15 @@ public class InscripcionAutomatica(AppDbContext db, ServicioInscripciones inscri
         var campana = await db.Campanas.FirstOrDefaultAsync(c => c.Nombre == o.Campana && c.Activa, ct);
         if (campana is null) return 0;
 
-        // Cupo acumulado hasta la hora actual: p. ej. 40 por día en 10 horas = 4 por hora.
+        // Cupo por hora (p. ej. 200 por día en 10 horas = 20 por hora), sin pasar el máximo diario.
         var local = horario.ALocal(ahora);
         var horas = Math.Max(1, opciones.Value.HoraFin - opciones.Value.HoraInicio);
-        var transcurridas = Math.Clamp(local.Hour - opciones.Value.HoraInicio + 1, 1, horas);
-        var permitidas = (int)Math.Ceiling(o.MaximoPorDia * (double)transcurridas / horas);
-        var desde = Fechas.InicioDelDiaUtc(local.Date);
-        var hoy = await db.Inscripciones.CountAsync(i => i.CampanaId == campana.Id && i.CreadoEn >= desde, ct);
-        var cupo = permitidas - hoy;
+        var porHora = (int)Math.Ceiling(o.MaximoPorDia / (double)horas);
+        var inicioHora = ahora.AddMinutes(-local.Minute).AddSeconds(-local.Second);
+        var desdeDia = Fechas.InicioDelDiaUtc(local.Date);
+        var estaHora = await db.Inscripciones.CountAsync(i => i.CampanaId == campana.Id && i.CreadoEn >= inicioHora, ct);
+        var hoy = await db.Inscripciones.CountAsync(i => i.CampanaId == campana.Id && i.CreadoEn >= desdeDia, ct);
+        var cupo = Math.Min(porHora - estaHora, o.MaximoPorDia - hoy);
         if (cupo <= 0) return 0;
 
         var ids = await db.Prospectos

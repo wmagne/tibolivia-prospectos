@@ -109,7 +109,7 @@ public class AutoInscripcionOptions
 {
     public bool Habilitada { get; set; }
     public string Campana { get; set; } = "Publicidad por rubro (correo)";
-    public int MaximoPorDia { get; set; } = 40;
+    public int MaximoPorDia { get; set; } = 200;
 }
 
 public record ResultadoEnvio(bool Exito, string? ProveedorId, string? Error)
