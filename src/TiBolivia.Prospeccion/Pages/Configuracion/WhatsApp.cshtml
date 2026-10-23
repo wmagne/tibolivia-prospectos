@@ -75,7 +75,7 @@
                 <tr><td>@Marca(Model.ChatbotConfigurado)</td><td>URL del chatbot</td><td class="text-muted">respuestas automáticas</td></tr>
                 <tr><td>@Marca(Model.O.RequerirConsentimiento)</td><td>Exigir consentimiento (opt-in)</td><td class="text-muted">recomendado</td></tr>
             </table></div>
-            <p class="small mb-1">Los datos se cargan con el script <code>scripts\configurar-whatsapp.ps1</code> (ver README) y luego se reinicia el sistema.</p>
+            <p class="small mb-1">Los datos se cambian en <b>Datos de conexión</b> (arriba) y se aplican al guardar, sin reiniciar.</p>
             <hr />
             <h6>URL del webhook para @(Model.O.EsMeta ? "Meta" : "el panel de TextMeBot")</h6>
             <code class="d-block mb-1">@Model.UrlWebhook</code>
