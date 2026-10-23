@@ -42,6 +42,10 @@ SELECT c."Nombre", CASE WHEN c."Activa" THEN 'ACTIVA' ELSE 'inactiva' END,
   FROM "Campanas" c LEFT JOIN "Inscripciones" i ON i."CampanaId" = c."Id"
  GROUP BY c."Id" ORDER BY c."Activa" DESC, c."Nombre";
 SQL
+  echo "== Prospectos por origen (total | con correo)"
+  docker exec -i tibolivia-prospectos-db psql -U tibolivia -d tibolivia_prospeccion -tA -F ' | ' <<'SQL' 2>/dev/null
+SELECT coalesce("Origen", '-'), count(*), count(*) FILTER (WHERE coalesce("Email", '') <> '') FROM "Prospectos" GROUP BY 1 ORDER BY 1;
+SQL
   echo "== Correos registrados (dirección estado: cantidad)"
   docker exec -i tibolivia-prospectos-db psql -U tibolivia -d tibolivia_prospeccion -tA <<'SQL' 2>/dev/null
 SELECT "Direccion" || ' ' || "Estado" || ': ' || count(*) FROM "Mensajes" WHERE "Canal" = 'Email' GROUP BY "Direccion", "Estado";
