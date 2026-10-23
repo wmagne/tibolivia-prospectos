@@ -174,6 +174,7 @@ public static class PaqueteCampanas
             ]);
 
         await CampanasSantaCruzAsync(db);
+        await PublicidadPorRubroAsync(db, software);
         await db.SaveChangesAsync();
     }
 
@@ -287,6 +288,56 @@ public static class PaqueteCampanas
                     y sin perder sus correos actuales.</p>
                     """ + firma)),
                 new(5, llamada),
+            ]);
+    }
+
+    /// <summary>
+    /// Publicidad por correo: el mismo envío sirve para todos los rubros porque el titular, el párrafo y los
+    /// beneficios se eligen según el rubro de cada prospecto ({{TitularRubro}}, {{PropuestaRubro}}, {{BeneficiosRubro}}).
+    /// </summary>
+    private static async Task PublicidadPorRubroAsync(AppDbContext db, Servicio software)
+    {
+        const string firma = "<p style=\"margin-top:20px;\">Saludos cordiales,<br><b>{{Comercial}}</b> · TIBolivia<br>{{EmailComercial}} · {{TelefonoComercial}}</p>";
+
+        await CampanaAsync(db, "Publicidad por rubro (correo)",
+            "3 correos con diseño en 10 días. El mensaje se adapta solo al rubro de cada empresa. Solo correo: inscriba prospectos con email.",
+            software,
+            [
+                new(0, await CorreoAsync(db, "Publicidad 1 · Presentación por rubro",
+                    "{{Empresa}}: {{TitularRubro}}",
+                    """
+                    <h2 style="color:#0d47a1;font-size:22px;margin:0 0 16px;">{{TitularRubro}}</h2>
+                    <p>Estimados de {{Empresa}}:</p>
+                    <p>{{PropuestaRubro}} En <b>TIBolivia</b>, empresa cruceña de desarrollo de software, lo hacemos realidad con sistemas a su medida.</p>
+                    <p>Para {{Empresa}} vemos una oportunidad concreta: <b>{{Necesidad}}</b>.</p>
+                    {{BeneficiosRubro}}
+                    <p style="background:#e8f1fb;border-left:4px solid #1565c0;padding:12px 16px;border-radius:4px;">
+                    <b>Diagnóstico gratuito de 30 minutos</b>, presencial en Santa Cruz o por videollamada: revisamos sus procesos y le decimos qué conviene automatizar primero. Sin compromiso.</p>
+                    {{BotonesContacto}}
+                    """ + firma)),
+                new(4, await CorreoAsync(db, "Publicidad 2 · Cómo trabajamos",
+                    "¿Cómo sería un sistema para {{Empresa}}?",
+                    """
+                    <h2 style="color:#0d47a1;font-size:22px;margin:0 0 16px;">Por etapas, sin detener su operación</h2>
+                    <p>Estimados de {{Empresa}}:</p>
+                    <p>Hace unos días les escribí sobre <b>{{Necesidad}}</b>. Así trabajamos en TIBolivia:</p>
+                    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:12px 0 16px;">
+                      <tr><td style="padding:6px 12px 6px 0;vertical-align:top;font-weight:bold;color:#1565c0;">1.</td><td style="padding:6px 0;"><b>Diagnóstico gratuito</b>: entendemos cómo trabajan hoy.</td></tr>
+                      <tr><td style="padding:6px 12px 6px 0;vertical-align:top;font-weight:bold;color:#1565c0;">2.</td><td style="padding:6px 0;"><b>Propuesta clara</b>: alcance, plazo y costo, empezando por lo que más tiempo les quita.</td></tr>
+                      <tr><td style="padding:6px 12px 6px 0;vertical-align:top;font-weight:bold;color:#1565c0;">3.</td><td style="padding:6px 0;"><b>Entregas cortas</b>: ven avances reales cada pocas semanas.</td></tr>
+                      <tr><td style="padding:6px 12px 6px 0;vertical-align:top;font-weight:bold;color:#1565c0;">4.</td><td style="padding:6px 0;"><b>Capacitación y soporte local</b> en Santa Cruz.</td></tr>
+                    </table>
+                    <p>¿Les parece si conversamos 30 minutos esta semana?</p>
+                    {{BotonesContacto}}
+                    """ + firma)),
+                new(6, await CorreoAsync(db, "Publicidad 3 · Cierre",
+                    "Quedamos atentos, {{Empresa}}",
+                    """
+                    <p>Estimados de {{Empresa}}:</p>
+                    <p>Este es mi último mensaje por ahora para no llenar su bandeja. Si más adelante quieren revisar <b>{{Necesidad}}</b>,
+                    el diagnóstico gratuito sigue en pie: respondan este correo o escríbanme por WhatsApp.</p>
+                    {{BotonesContacto}}
+                    """ + firma)),
             ]);
     }
 

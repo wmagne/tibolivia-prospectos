@@ -28,14 +28,7 @@ public partial class EnviadorEmailSmtp(IOptions<SmtpOptions> opciones, ILogger<E
         msg.Headers.Add("List-Unsubscribe", $"<{c.LinkBaja}>");
         msg.Headers.Add("List-Unsubscribe-Post", "List-Unsubscribe=One-Click");
 
-        var html = $"""
-            <div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;max-width:640px">
-            {c.Html}
-            <hr style="border:none;border-top:1px solid #ddd;margin-top:32px">
-            <p style="font-size:11px;color:#888">Recibe este correo porque su empresa podría beneficiarse de los servicios de TI Bolivia.
-            Si no desea recibir más mensajes, <a href="{c.LinkBaja}">haga clic aquí para darse de baja</a>.</p>
-            </div>
-            """;
+        var html = DisenoCorreo.Envolver(c.Html, c.LinkBaja);
         var cuerpo = new BodyBuilder { HtmlBody = html, TextBody = ATexto(c.Html) + $"\n\nDarse de baja: {c.LinkBaja}" };
         if (c.AdjuntoContenido is { Length: > 0 } && !string.IsNullOrWhiteSpace(c.AdjuntoNombre))
             cuerpo.Attachments.Add(c.AdjuntoNombre, c.AdjuntoContenido);
