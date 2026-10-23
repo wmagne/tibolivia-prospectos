@@ -33,5 +33,26 @@ SQL
 SELECT "Direccion" || ' ' || "Estado" || ': ' || count(*) FROM "Mensajes" WHERE "Canal" = 'WhatsApp' GROUP BY "Direccion", "Estado";
 SQL
 fi
+if docker ps --format '{{.Names}}' | grep -qx tibolivia-prospectos-db; then
+  echo "== Campañas (activa | inscritos activos | finalizados/otros | próximo envío)"
+  docker exec -i tibolivia-prospectos-db psql -U tibolivia -d tibolivia_prospeccion -tA -F ' | ' <<'SQL' 2>/dev/null
+SELECT c."Nombre", CASE WHEN c."Activa" THEN 'ACTIVA' ELSE 'inactiva' END,
+       count(i."Id") FILTER (WHERE i."Estado" = 'Activa'), count(i."Id") FILTER (WHERE i."Estado" <> 'Activa'),
+       coalesce(to_char(min(i."ProximoEnvio") FILTER (WHERE i."Estado" = 'Activa') - interval '4 hours', 'DD/MM HH24:MI'), '-')
+  FROM "Campanas" c LEFT JOIN "Inscripciones" i ON i."CampanaId" = c."Id"
+ GROUP BY c."Id" ORDER BY c."Activa" DESC, c."Nombre";
+SQL
+  echo "== Correos registrados (dirección estado: cantidad)"
+  docker exec -i tibolivia-prospectos-db psql -U tibolivia -d tibolivia_prospeccion -tA <<'SQL' 2>/dev/null
+SELECT "Direccion" || ' ' || "Estado" || ': ' || count(*) FROM "Mensajes" WHERE "Canal" = 'Email' GROUP BY "Direccion", "Estado";
+SQL
+  echo "== Últimos 15 correos (hora Bolivia | estado | empresa | asunto | error)"
+  docker exec -i tibolivia-prospectos-db psql -U tibolivia -d tibolivia_prospeccion -tA -F ' | ' <<'SQL' 2>/dev/null
+SELECT to_char(m."CreadoEn" - interval '4 hours', 'DD/MM HH24:MI'), m."Estado", p."Empresa", coalesce(m."Asunto", '-'), coalesce(left(m."Error", 120), '')
+  FROM "Mensajes" m JOIN "Prospectos" p ON p."Id" = m."ProspectoId" WHERE m."Canal" = 'Email' ORDER BY m."CreadoEn" DESC LIMIT 15;
+SQL
+fi
 echo "== Últimos avisos del sistema sobre WhatsApp/Meta (24 h)"
 docker logs --since 24h tibolivia-prospectos-app 2>&1 | grep -iE "whatsapp|meta respondi|graph" | tail -10 || true
+echo "== Últimos avisos sobre correo y campañas (24 h)"
+docker logs --since 24h tibolivia-prospectos-app 2>&1 | grep -iE "smtp|correo|campa|mail" | tail -15 || true
