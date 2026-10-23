@@ -15,7 +15,7 @@
                 <dt class="col-5">Respuestas van a</dt><dd class="col-7">@(Model.Smtp.ResponderAlComercial ? "el comercial asignado" : Model.Smtp.RemitenteEmail)</dd>
             </dl>
             <form method="post" asp-page-handler="PruebaSmtp" class="d-flex gap-2">
-                <input asp-for="Destino" class="form-control" placeholder="correo@ejemplo.com" />
+                <input asp-for="Destino" type="email" class="form-control" placeholder="Su correo personal (ej. Gmail)" />
                 <button class="btn btn-primary text-nowrap">Enviar correo de prueba</button>
             </form>
         </div>
@@ -34,6 +34,8 @@
     </div>
 </div>
 <div class="card p-3 mt-3 small">
-    Los datos se cambian en <code>appsettings.json</code> (sección <code>Smtp</code> e <code>Imap</code>). La contraseña se guarda aparte con
-    <code>dotnet user-secrets set "Smtp:Password" "..."</code> o, en el servidor, con la variable de entorno <code>Smtp__Password</code>.
+    <p class="mb-1"><i class="bi bi-info-circle"></i> <b>Cómo cambiar estos datos</b></p>
+    <p class="mb-1">Servidor, puerto y usuario: archivo <code>appsettings.json</code> (secciones <code>Smtp</code> e <code>Imap</code>).</p>
+    <p class="mb-0">Contraseña del correo: en GitHub, secreto <code>SMTP_CLAVE</code> del repositorio <code>tibolivia-prospectos</code>;
+        luego ejecute <b>Actions → Desplegar en servidor → instalar</b>.</p>
 </div>

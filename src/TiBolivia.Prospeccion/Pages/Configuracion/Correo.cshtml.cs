@@ -16,7 +16,7 @@ public class CorreoModel(
     public bool ImapConfigurado => lector.Configurado;
     [BindProperty] public string? Destino { get; set; }
 
-    public void OnGet() => Destino ??= User.Identity?.Name;
+    public void OnGet() { }
 
     public async Task<IActionResult> OnPostPruebaSmtpAsync()
     {
