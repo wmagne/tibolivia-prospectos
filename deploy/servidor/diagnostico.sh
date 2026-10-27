@@ -60,3 +60,12 @@ echo "== Últimos avisos del sistema sobre WhatsApp/Meta (24 h)"
 docker logs --since 24h tibolivia-prospectos-app 2>&1 | grep -iE "whatsapp|meta respondi|graph" | tail -10 || true
 echo "== Últimos avisos sobre correo y campañas (24 h)"
 docker logs --since 24h tibolivia-prospectos-app 2>&1 | grep -iE "smtp|correo|campa|mail" | tail -15 || true
+echo "== DNS de correo de tibolivia.com (SPF, DMARC, MX, DKIM)"
+consultar() { if command -v dig >/dev/null; then dig +short "$2" "$1"; else docker run --rm alpine:3.20 sh -c "apk add -q bind-tools >/dev/null 2>&1 && dig +short $2 $1"; fi; }
+echo "MX:    $(consultar tibolivia.com MX | tr '\n' ' ')"
+echo "SPF:   $(consultar tibolivia.com TXT | grep -i spf)"
+echo "DMARC: $(consultar _dmarc.tibolivia.com TXT)"
+for s in mail default dkim s1 selector1 x; do r=$(consultar "$s._domainkey.tibolivia.com" TXT); [ -n "$r" ] && echo "DKIM ($s): $(echo "$r" | cut -c1-80)…"; done
+echo "IP del servidor de correo: $(consultar mail.tibolivia.com A) · PTR: $(consultar "$(consultar mail.tibolivia.com A | head -1 | awk -F. '{print $4"."$3"."$2"."$1}').in-addr.arpa" PTR)"
+echo "== Contenedores de correo"; docker ps --format '{{.Names}} {{.Image}}' | grep -iE "mail|postfix|dovecot|opendkim|rspamd" || echo "(no hay contenedores de correo; puede ser un servicio del sistema)"
+systemctl is-active postfix opendkim 2>/dev/null | paste -sd' ' | sed 's/^/postfix\/opendkim: /'
