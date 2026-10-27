@@ -15,7 +15,7 @@ namespace TiBolivia.Prospeccion.Services;
 /// que envían los prospectos. Solo lee: no marca como leído ni mueve nada, así la casilla
 /// se sigue usando normalmente desde Outlook o el celular.
 /// </summary>
-public class LectorRespuestasEmail(
+public partial class LectorRespuestasEmail(
     AppDbContext db,
     IOptions<ImapOptions> imapOpciones,
     IOptions<SmtpOptions> smtpOpciones,
@@ -24,6 +24,10 @@ public class LectorRespuestasEmail(
 {
     private static readonly string[] AsuntosAutomaticos =
         ["respuesta automática", "respuesta automatica", "fuera de la oficina", "out of office", "automatic reply", "autoreply", "vacaciones"];
+
+    private static readonly string[] AsuntosRebote =
+        ["undelivered mail", "undeliverable", "delivery status notification (failure)", "mail delivery failed",
+         "returned mail", "failure notice", "no se puede entregar", "no se pudo entregar", "entrega fallida"];
 
     public bool Configurado
     {
@@ -62,6 +66,12 @@ public class LectorRespuestasEmail(
             var messageId = r.Envelope.MessageId;
             if (remitente is null || string.IsNullOrEmpty(messageId)) continue;
 
+            if (EsRebote(remitente, r.Envelope.Subject))
+            {
+                if (await ProcesarReboteAsync(carpeta, r, messageId, ct)) nuevos++;
+                continue;
+            }
+
             var prospecto = await db.Prospectos
                 .Include(p => p.Inscripciones).ThenInclude(i => i.Campana)
                 .FirstOrDefaultAsync(p => p.Email == remitente, ct);
@@ -97,6 +107,77 @@ public class LectorRespuestasEmail(
         if (nuevos > 0) log.LogInformation("IMAP: {Cantidad} respuestas de prospectos registradas", nuevos);
         return nuevos;
     }
+
+    private static bool EsRebote(string remitente, string? asunto)
+    {
+        var local = remitente.Split('@')[0];
+        if (local is "mailer-daemon" or "postmaster") return true;
+        var a = asunto?.ToLowerInvariant() ?? "";
+        return AsuntosRebote.Any(a.Contains);
+    }
+
+    /// <summary>
+    /// Rebote definitivo (la dirección no existe o rechaza el correo): se marca el correo del prospecto como inválido
+    /// para no volver a escribirle y se detienen sus campañas. Los avisos de "entrega demorada" se ignoran.
+    /// </summary>
+    private async Task<bool> ProcesarReboteAsync(IMailFolder carpeta, IMessageSummary r, string messageId, CancellationToken ct)
+    {
+        if (await db.Mensajes.AnyAsync(m => m.ProveedorId == messageId, ct)) return false;
+        var mensaje = await carpeta.GetMessageAsync(r.UniqueId, ct);
+
+        var fallidos = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var reporte = mensaje.BodyParts.OfType<MessageDeliveryStatus>().FirstOrDefault();
+        if (reporte is not null)
+        {
+            foreach (var grupo in reporte.StatusGroups.Skip(1))
+            {
+                var accion = grupo["Action"]?.Trim().ToLowerInvariant();
+                if (accion is not null && accion != "failed") continue;
+                var destino = grupo["Final-Recipient"] ?? grupo["Original-Recipient"];
+                if (destino?.Split(';').LastOrDefault()?.Trim() is { Length: > 3 } d) fallidos.Add(d);
+            }
+        }
+        else
+        {
+            var asunto = mensaje.Subject?.ToLowerInvariant() ?? "";
+            if (asunto.Contains("delay") || asunto.Contains("demora")) return false;
+            foreach (System.Text.RegularExpressions.Match m in CorreoEnTexto().Matches(mensaje.TextBody ?? ""))
+                fallidos.Add(m.Groups[1].Value);
+        }
+        if (fallidos.Count == 0) return false;
+
+        var correos = fallidos.Select(x => x.Trim('<', '>', ' ').ToLowerInvariant()).ToList();
+        var prospectos = await db.Prospectos.Include(p => p.Inscripciones)
+            .Where(p => p.Email != null && correos.Contains(p.Email.ToLower())).ToListAsync(ct);
+        if (prospectos.Count == 0) return false;
+
+        var detalle = (mensaje.TextBody ?? "").Trim();
+        if (detalle.Length > 1500) detalle = detalle[..1500] + "…";
+        foreach (var p in prospectos)
+        {
+            p.BajaEmail = true;
+            p.DatosPorVerificar = true;
+            p.ActualizadoEn = DateTime.UtcNow;
+            foreach (var i in p.Inscripciones.Where(i => i.Estado == EstadoInscripcion.Activa))
+            {
+                i.Estado = EstadoInscripcion.Detenida;
+                i.ProximoEnvio = null;
+            }
+            db.Mensajes.Add(new Mensaje
+            {
+                ProspectoId = p.Id, Canal = Canal.Email, Direccion = DireccionMensaje.Entrante, Asunto = "Rebote: " + mensaje.Subject,
+                Cuerpo = detalle, Estado = EstadoMensaje.Fallido, ProveedorId = messageId, CreadoEn = (r.Envelope.Date ?? DateTimeOffset.UtcNow).UtcDateTime,
+            });
+            db.Interacciones.Add(new Interaccion { ProspectoId = p.Id, Tipo = TipoInteraccion.Sistema,
+                Detalle = $"El correo {p.Email} rebotó (no existe o rechaza mensajes). Se dejó de enviarle correos: busque otro correo de contacto." });
+        }
+        await db.SaveChangesAsync(ct);
+        log.LogInformation("IMAP: rebote registrado para {Correos}", string.Join(", ", correos));
+        return true;
+    }
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"<([^<>@\s]+@[^<>@\s]+)>")]
+    private static partial System.Text.RegularExpressions.Regex CorreoEnTexto();
 
     private static bool EsAutomatico(MimeMessage m)
     {
