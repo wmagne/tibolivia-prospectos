@@ -50,6 +50,20 @@ SQL
   docker exec -i tibolivia-prospectos-db psql -U tibolivia -d tibolivia_prospeccion -tA <<'SQL' 2>/dev/null
 SELECT "Direccion" || ' ' || "Estado" || ': ' || count(*) FROM "Mensajes" WHERE "Canal" = 'Email' GROUP BY "Direccion", "Estado";
 SQL
+  echo "== Respuestas de prospectos (hora Bolivia | empresa | asunto)"
+  docker exec -i tibolivia-prospectos-db psql -U tibolivia -d tibolivia_prospeccion -tA -F ' | ' <<'SQL' 2>/dev/null
+SELECT to_char(m."CreadoEn" - interval '4 hours', 'DD/MM HH24:MI'), p."Empresa", coalesce(m."Asunto", '-')
+  FROM "Mensajes" m JOIN "Prospectos" p ON p."Id" = m."ProspectoId"
+ WHERE m."Direccion" = 'Entrante' AND m."Estado" = 'Recibido' ORDER BY m."CreadoEn" DESC LIMIT 20;
+SQL
+  echo "== Prospectos por estado"
+  docker exec -i tibolivia-prospectos-db psql -U tibolivia -d tibolivia_prospeccion -tA -F ': ' <<'SQL' 2>/dev/null
+SELECT "Estado", count(*) FROM "Prospectos" GROUP BY 1 ORDER BY 2 DESC;
+SQL
+  echo "== Correos enviados por día (hora Bolivia)"
+  docker exec -i tibolivia-prospectos-db psql -U tibolivia -d tibolivia_prospeccion -tA -F ': ' <<'SQL' 2>/dev/null
+SELECT to_char("CreadoEn" - interval '4 hours', 'DD/MM'), count(*) FROM "Mensajes" WHERE "Canal" = 'Email' AND "Direccion" = 'Saliente' AND "Estado" = 'Enviado' GROUP BY 1 ORDER BY 1;
+SQL
   echo "== Últimos 15 correos (hora Bolivia | estado | empresa | asunto | error)"
   docker exec -i tibolivia-prospectos-db psql -U tibolivia -d tibolivia_prospeccion -tA -F ' | ' <<'SQL' 2>/dev/null
 SELECT to_char(m."CreadoEn" - interval '4 hours', 'DD/MM HH24:MI'), m."Estado", p."Empresa", coalesce(m."Asunto", '-'), coalesce(left(m."Error", 120), '')
