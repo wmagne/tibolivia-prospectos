@@ -1,0 +1,33 @@
+# Un segmento por línea. La búsqueda diaria toma los 6 siguientes (ver estado.txt) y vuelve a empezar al terminar.
+Santa Cruz — negocios con DELIVERY propio: restaurantes, pizzerías, hamburgueserías, pollerías, comida rápida (WhatsApp de pedidos publicado)
+Santa Cruz — DELIVERY de farmacias, licorerías, minimarkets, panaderías, heladerías, florerías y regalos (WhatsApp de pedidos)
+Santa Cruz — empresas de DELIVERY y mensajería: motoboys, courier urbano, mandados, delivery de encomiendas
+La Paz y El Alto — negocios con DELIVERY: restaurantes, comida rápida, pastelerías, farmacias, licorerías (WhatsApp de pedidos)
+Cochabamba — negocios con DELIVERY: restaurantes, pollerías, pizzerías, farmacias, licorerías, minimarkets (WhatsApp de pedidos)
+Tarija, Sucre, Oruro, Potosí, Trinidad — negocios con DELIVERY y empresas de mensajería (WhatsApp de pedidos)
+Santa Cruz — tiendas con venta por WhatsApp/Instagram: ropa, calzado, cosméticos, tecnología, accesorios, mascotas
+La Paz — tiendas con venta por WhatsApp/Instagram y catálogos en línea
+Cochabamba — tiendas con venta por WhatsApp/Instagram y catálogos en línea
+Santa Cruz — clínicas, consultorios, odontológicas, laboratorios, fisioterapia, estética (citas por WhatsApp)
+La Paz y El Alto — clínicas, consultorios, odontológicas, laboratorios, estética
+Cochabamba — clínicas, consultorios, odontológicas, laboratorios, estética
+Santa Cruz — gimnasios, academias, institutos, centros de idiomas, guarderías, colegios privados
+La Paz y Cochabamba — gimnasios, academias, institutos, centros de idiomas, colegios privados
+Santa Cruz — distribuidoras e importadoras (alimentos, bebidas, limpieza, ferretería, repuestos)
+La Paz y El Alto — distribuidoras, importadoras e industrias medianas
+Cochabamba — distribuidoras, importadoras e industrias medianas
+Santa Cruz — transporte de carga, logística, almacenes, agencias aduaneras
+Bolivia — transporte interdepartamental, encomiendas y carga (todas las ciudades)
+Santa Cruz — inmobiliarias, constructoras, materiales de construcción, ferreterías grandes
+La Paz y Cochabamba — inmobiliarias, constructoras, materiales de construcción
+Santa Cruz — hoteles, apart hoteles, salones de eventos, catering, agencias de viaje
+La Paz, Cochabamba y Uyuni — hoteles, agencias de turismo, eventos
+Santa Cruz — talleres mecánicos, lubricentros, lavaderos de autos, repuestos, rent a car, concesionarios
+La Paz y Cochabamba — talleres, repuestos, lubricentros, concesionarios
+Santa Cruz — servicios empresariales: contables, abogados, consultoras, seguridad privada, limpieza, publicidad
+La Paz y Cochabamba — servicios empresariales: contables, consultoras, seguridad, limpieza, publicidad
+Montero, Warnes, Cotoca, La Guardia, Yapacaní, Camiri — comercios y agroindustria con WhatsApp publicado
+Tarija y Sucre — comercios, distribuidoras, clínicas, hoteles y colegios
+Oruro, Potosí, Trinidad, Riberalta, Cobija — comercios, distribuidoras, hoteles y clínicas
+Santa Cruz — veterinarias, pet shops, agroveterinarias, viveros
+Bolivia — supermercados regionales, minimarkets en cadena, panificadoras y pastelerías con sucursales
