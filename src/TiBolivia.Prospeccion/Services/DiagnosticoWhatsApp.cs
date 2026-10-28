@@ -35,10 +35,17 @@ public class DiagnosticoWhatsApp(HttpClient http, IOptionsSnapshot<WhatsAppOptio
     public async Task<List<string>> InventarioPortafolioAsync(CancellationToken ct)
     {
         var lineas = new List<string>();
-        using var waba = await GetAsync(O.Url($"{O.BusinessAccountId}?fields=name,owner_business_info"), ct);
+        using var waba = await GetAsync(O.Url($"{O.BusinessAccountId}?fields=name,owner_business_info,account_review_status,business_verification_status"), ct);
         var negocio = waba.RootElement.TryGetProperty("owner_business_info", out var ob) ? ob : default;
         var negocioId = negocio.ValueKind == JsonValueKind.Object ? Texto(negocio, "id") : null;
         lineas.Add($"Cuenta configurada: {Texto(waba.RootElement, "name")} ({O.BusinessAccountId}) · Portafolio: {(negocio.ValueKind == JsonValueKind.Object ? Texto(negocio, "name") : "?")} ({negocioId})");
+        lineas.Add($"Revisión de la cuenta: {Texto(waba.RootElement, "account_review_status") ?? "?"} · Verificación de la empresa: {Texto(waba.RootElement, "business_verification_status") ?? "?"}");
+        try
+        {
+            using var num = await GetAsync(O.Url($"{O.PhoneNumberId}?fields=status,code_verification_status,platform_type,name_status"), ct);
+            lineas.Add($"Número en uso: estado {Texto(num.RootElement, "status")} · código {Texto(num.RootElement, "code_verification_status")} · plataforma {Texto(num.RootElement, "platform_type")} · nombre {Texto(num.RootElement, "name_status")}");
+        }
+        catch (InvalidOperationException ex) { lineas.Add("No se pudo leer el estado del número: " + ex.Message); }
         if (negocioId is null) return lineas;
         foreach (var tipo in new[] { "owned_whatsapp_business_accounts", "client_whatsapp_business_accounts" })
         {
