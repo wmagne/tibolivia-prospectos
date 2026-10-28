@@ -79,7 +79,7 @@ public class DiagnosticoWhatsApp(HttpClient http, IOptionsSnapshot<WhatsAppOptio
     /// <summary>Traduce los errores más comunes de Meta a una explicación en español.</summary>
     public static string ErrorLegible(string cuerpo, int status)
     {
-        string? mensaje = null, mensajeUsuario = null; int codigo = 0, subcodigo = 0;
+        string? mensaje = null, mensajeUsuario = null, detalles = null; int codigo = 0, subcodigo = 0;
         try
         {
             using var doc = JsonDocument.Parse(cuerpo);
@@ -88,6 +88,8 @@ public class DiagnosticoWhatsApp(HttpClient http, IOptionsSnapshot<WhatsAppOptio
             mensajeUsuario = Texto(e, "error_user_msg");
             if (e.TryGetProperty("code", out var c) && c.TryGetInt32(out var n)) codigo = n;
             if (e.TryGetProperty("error_subcode", out var sc) && sc.TryGetInt32(out var sn)) subcodigo = sn;
+            if (e.TryGetProperty("error_data", out var ed))
+                detalles = ed.ValueKind == JsonValueKind.Object ? Texto(ed, "details") : ed.ToString();
         }
         catch (Exception ex) when (ex is JsonException or KeyNotFoundException or InvalidOperationException) { }
 
@@ -111,7 +113,9 @@ public class DiagnosticoWhatsApp(HttpClient http, IOptionsSnapshot<WhatsAppOptio
                 133005 => "El PIN no coincide con la verificación en dos pasos ya configurada para este número.",
                 _ => null,
             };
-        var detalle = mensajeUsuario ?? mensaje ?? cuerpo;
+        var detalle = (mensajeUsuario ?? mensaje ?? cuerpo)
+            + (string.IsNullOrWhiteSpace(detalles) ? "" : " · Detalle: " + detalles)
+            + (codigo != 0 ? $" · código {codigo}{(subcodigo != 0 ? "/" + subcodigo : "")}" : "");
         return explicacion is null ? $"Meta respondió HTTP {status}: {detalle}" : $"{explicacion} (Meta: {detalle})";
     }
 
