@@ -176,6 +176,7 @@ public static class PaqueteCampanas
         await CampanasSantaCruzAsync(db);
         await PublicidadPorRubroAsync(db, software);
         await TelefonoPorRubroAsync(db, software);
+        await PlanNegocioAsync(db);
         await db.SaveChangesAsync();
     }
 
@@ -370,6 +371,86 @@ public static class PaqueteCampanas
                 new(5, await TareaAsync(db, "Llamada 2 · Segundo intento (tarea)",
                     "Volver a llamar a {{Empresa}}",
                     "Segundo intento. Si no contestan o no hay interés, registre el resultado y cierre la tarea. Si consiguió un correo, edítelo en la ficha e inscríbala en \"Publicidad por rubro (correo)\".")),
+            ], activa: true);
+    }
+
+    /// <summary>
+    /// Plan de negocio (oct. 2026): Línea 1 salud digital (piloto para consultorios) y Línea 2 formación digital
+    /// (talleres para empresas y aliados). Mensajes W1, W2, E1, E2 y E3 del plan.
+    /// </summary>
+    private static async Task PlanNegocioAsync(AppDbContext db)
+    {
+        var salud = await ServicioAsync(db, "Sistema para consultorios (salud digital)",
+            "Ficha del paciente e historial de consultas, informes legibles (ecografía, laboratorio, consulta) en PDF, agenda con recordatorio por WhatsApp y respaldo en la nube. Suscripción mensual.");
+        var formacion = await ServicioAsync(db, "Formación digital práctica",
+            "Talleres de 8 a 12 horas, prácticos y con casos reales: IA aplicada al trabajo, Excel para pymes, ciberseguridad básica y digitalización para profesionales de salud.");
+        const string firma = "<p>Saludos cordiales,<br><b>{{Comercial}}</b> · TIBolivia<br>{{EmailComercial}} · {{TelefonoComercial}}</p>";
+
+        await CampanaAsync(db, "Salud digital: piloto para consultorios",
+            "Plan de negocio, Línea 1. Consultorios, centros de ecografía, odontólogos y clínicas de 1 a 5 profesionales: WhatsApp W1 y correo E1, y a los 4 días WhatsApp W2 y correo E3.",
+            salud,
+            [
+                new(0, await CorreoAsync(db, "Salud 1 · E1 Informes y agenda para su consultorio",
+                    "Informes legibles y agenda automática para su consultorio",
+                    """
+                    <h2 style="color:#0d47a1;font-size:22px;margin:0 0 16px;">Menos papeles, más tiempo para sus pacientes</h2>
+                    <p>Estimados de {{Empresa}}:</p>
+                    <p>Soy {{Comercial}}, de <b>TIBolivia</b>. Trabajamos con profesionales de salud de Santa Cruz para reducir el tiempo que pierden en papeles.</p>
+                    <p>Nuestro sistema permite:</p>
+                    <ul>
+                      <li>Generar <b>informes</b> (ecografía, consulta, laboratorio) claros, en PDF o impresos.</li>
+                      <li><b>Recordar las citas</b> a los pacientes por WhatsApp.</li>
+                      <li>Guardar el <b>historial de cada paciente</b> con respaldo seguro en la nube.</li>
+                    </ul>
+                    <p style="background:#e8f1fb;border-left:4px solid #1565c0;padding:12px 16px;border-radius:4px;">
+                    Estamos abriendo <b>2 lugares para un piloto gratuito de 30 días</b>. ¿Podemos coordinar una demostración de 10 minutos?</p>
+                    {{BotonesContacto}}
+                    """ + firma)),
+                new(0, await TareaAsync(db, "Salud 2 · W1 WhatsApp primer contacto (tarea)",
+                    "Enviar WhatsApp W1 (piloto consultorio) a {{Empresa}}",
+                    "Buenos días. Soy {{Comercial}}, de TIBolivia, empresa cruceña de tecnología. Ayudamos a consultorios a tener informes digitales legibles, agenda con recordatorio automático por WhatsApp e historial de pacientes en la nube. Estamos eligiendo 2 consultorios para un piloto sin costo este mes. ¿Le puedo mostrar en 10 minutos cómo funciona?")),
+                new(4, await TareaAsync(db, "Salud 3 · W2 WhatsApp seguimiento (tarea)",
+                    "Enviar WhatsApp W2 de seguimiento a {{Empresa}}",
+                    "Le escribo de nuevo de TIBolivia por el piloto de informes y agenda digital para {{Empresa}}. Me quedan pocos lugares esta semana. ¿Le queda bien una demo corta de 10 minutos?")),
+                new(0, await CorreoAsync(db, "Salud 4 · E3 Seguimiento",
+                    "Re: Informes legibles y agenda automática para su consultorio",
+                    """
+                    <p>Estimados de {{Empresa}}:</p>
+                    <p>Les escribo brevemente para retomar mi correo anterior sobre el <b>piloto gratuito</b> de informes digitales y agenda con recordatorios.
+                    Si les interesa, coordinamos una demo de 10 minutos en el horario que les acomode. Si no es el momento, me lo indican y no les vuelvo a escribir.</p>
+                    {{BotonesContacto}}
+                    """ + firma)),
+            ], activa: true);
+
+        await CampanaAsync(db, "Formación digital: talleres para empresas y aliados",
+            "Plan de negocio, Línea 2. CAINCO, UPSA–CENACE, INFOCAL y empresas de 10 a 100 empleados: correo E2 y llamada, y a los 2 días correo E3.",
+            formacion,
+            [
+                new(0, await CorreoAsync(db, "Formación 1 · E2 Talleres para su equipo",
+                    "Capacitación práctica en IA y herramientas digitales para su equipo",
+                    """
+                    <h2 style="color:#0d47a1;font-size:22px;margin:0 0 16px;">Talleres prácticos: resultados aplicables al día siguiente</h2>
+                    <p>Estimados señores de {{Empresa}}:</p>
+                    <p>Soy {{Comercial}}, docente universitario y titular de <b>TIBolivia</b>. Ofrecemos talleres de 8 a 12 horas, prácticos y con casos reales del participante:</p>
+                    <ul>
+                      <li><b>IA aplicada al trabajo diario:</b> redactar, resumir y analizar datos.</li>
+                      <li><b>Excel y herramientas de oficina</b> para pymes.</li>
+                      <li><b>Ciberseguridad básica</b> para empresas y familias.</li>
+                    </ul>
+                    <p>Nos interesa organizar un taller para su equipo o sus socios, e incluir becas para jóvenes de bajos recursos. ¿Podemos reunirnos 20 minutos esta semana?</p>
+                    {{BotonesContacto}}
+                    """ + firma)),
+                new(0, await TareaAsync(db, "Formación 2 · Llamada de presentación (tarea)",
+                    "Llamar a {{Empresa}} por los talleres de formación",
+                    "Guion: \"Buenos días, soy {{Comercial}} de TIBolivia. Les enviamos una propuesta de talleres prácticos de IA aplicada al trabajo, Excel y ciberseguridad para su equipo. ¿Con quién puedo coordinar una reunión de 20 minutos?\" Pida el nombre y correo del responsable de RR.HH. o capacitación.")),
+                new(2, await CorreoAsync(db, "Formación 3 · E3 Seguimiento",
+                    "Re: Capacitación práctica en IA y herramientas digitales para su equipo",
+                    """
+                    <p>Estimados de {{Empresa}}:</p>
+                    <p>Les escribo brevemente para retomar mi correo anterior sobre los talleres prácticos para su equipo. Si les interesa, coordinamos una reunión corta
+                    en el horario que les acomode. Si no es el momento, me lo indican y no les vuelvo a escribir.</p>
+                    {{BotonesContacto}}
+                    """ + firma)),
             ], activa: true);
     }
 

@@ -17,12 +17,15 @@ public class InscripcionAutomatica(AppDbContext db, ServicioInscripciones inscri
     public async Task<int> EjecutarAsync(CancellationToken ct)
     {
         var total = 0;
-        foreach (var regla in opciones.Value.OtrasAutoInscripciones.Prepend(opciones.Value.AutoInscripcion))
-            total += await EjecutarReglaAsync(regla, ct);
+        // Primero las reglas específicas (por rubro u origen), para que sus prospectos no caigan en las generales.
+        var reglas = opciones.Value.OtrasAutoInscripciones.Prepend(opciones.Value.AutoInscripcion)
+            .OrderBy(r => r.EsEspecifica ? 0 : 1).ToList();
+        foreach (var regla in reglas)
+            total += await EjecutarReglaAsync(regla, reglas.Where(r => r.Habilitada && r.EsEspecifica && r != regla).ToList(), ct);
         return total;
     }
 
-    private async Task<int> EjecutarReglaAsync(AutoInscripcionOptions o, CancellationToken ct)
+    private async Task<int> EjecutarReglaAsync(AutoInscripcionOptions o, List<AutoInscripcionOptions> especificas, CancellationToken ct)
     {
         var ahora = tiempo.GetUtcNow().UtcDateTime;
         if (!o.Habilitada || o.MaximoPorDia <= 0 || !horario.EsHorarioLaboral(ahora)) return 0;
@@ -41,7 +44,17 @@ public class InscripcionAutomatica(AppDbContext db, ServicioInscripciones inscri
         var cupo = Math.Min(porHora - estaHora, o.MaximoPorDia - hoy);
         if (cupo <= 0) return 0;
 
-        var ids = await Candidatos(o.Destino, campana.Id)
+        var q = Candidatos(o.Destino, campana.Id);
+        if (!string.IsNullOrWhiteSpace(o.Rubro)) q = q.Where(p => p.Rubro != null && p.Rubro.StartsWith(o.Rubro));
+        if (!string.IsNullOrWhiteSpace(o.Origen)) q = q.Where(p => p.Origen != null && p.Origen.StartsWith(o.Origen));
+        if (!o.EsEspecifica)
+            foreach (var e in especificas)
+            {
+                // Lo que reclama una campaña específica no se manda a las generales.
+                if (!string.IsNullOrWhiteSpace(e.Rubro)) { var r = e.Rubro; q = q.Where(p => p.Rubro == null || !p.Rubro.StartsWith(r)); }
+                if (!string.IsNullOrWhiteSpace(e.Origen)) { var or = e.Origen; q = q.Where(p => p.Origen == null || !p.Origen.StartsWith(or)); }
+            }
+        var ids = await q
             .OrderBy(p => p.Prioridad ?? "Z").ThenBy(p => p.DatosPorVerificar).ThenBy(p => p.Id)
             .Select(p => p.Id).Take(cupo).ToListAsync(ct);
         if (ids.Count == 0) return 0;
@@ -54,6 +67,10 @@ public class InscripcionAutomatica(AppDbContext db, ServicioInscripciones inscri
     /// <summary>Prospectos que todavía no se trabajaron por este canal y no están en otra campaña en curso.</summary>
     private IQueryable<Prospecto> Candidatos(string destino, int campanaId)
     {
+        if (destino.Equals("Cualquiera", StringComparison.OrdinalIgnoreCase))
+            return db.Prospectos.Where(p => ((p.Email != null && p.Email != "" && !p.BajaEmail) || p.Telefono != null)
+                && p.Estado == EstadoProspecto.Nuevo
+                && !p.Inscripciones.Any(i => i.Estado == EstadoInscripcion.Activa || i.CampanaId == campanaId));
         if (destino.Equals("Correo", StringComparison.OrdinalIgnoreCase))
             return db.Prospectos.Where(p => p.Email != null && p.Email != "" && !p.BajaEmail && p.Estado == EstadoProspecto.Nuevo && !p.Inscripciones.Any());
 

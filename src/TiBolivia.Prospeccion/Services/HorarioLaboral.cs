@@ -33,5 +33,6 @@ public class HorarioLaboral(IOptions<CampanasOptions> opciones)
     public DateTime ALocal(DateTime utc) => TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), _zona);
 
     private bool DiaHabil(DateTime local) =>
-        _o.EnviarFinDeSemana || (local.DayOfWeek != DayOfWeek.Saturday && local.DayOfWeek != DayOfWeek.Sunday);
+        !_o.Feriados.Contains(local.ToString("yyyy-MM-dd"))
+        && (_o.EnviarFinDeSemana || (local.DayOfWeek != DayOfWeek.Saturday && local.DayOfWeek != DayOfWeek.Sunday));
 }

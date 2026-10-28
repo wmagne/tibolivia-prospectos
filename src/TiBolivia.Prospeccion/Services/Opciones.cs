@@ -102,6 +102,8 @@ public class CampanasOptions
     /// <summary>URL pública del sistema (para enlaces de baja en los correos).</summary>
     public string UrlPublica { get; set; } = "https://localhost:7058";
     public AutoInscripcionOptions AutoInscripcion { get; set; } = new();
+    /// <summary>Feriados (AAAA-MM-DD) en los que no se envía nada.</summary>
+    public List<string> Feriados { get; set; } = [];
     /// <summary>Reglas adicionales, p. ej. campañas de WhatsApp o llamadas para prospectos sin correo.</summary>
     public List<AutoInscripcionOptions> OtrasAutoInscripciones { get; set; } = [];
 }
@@ -112,8 +114,14 @@ public class AutoInscripcionOptions
     public bool Habilitada { get; set; }
     public string Campana { get; set; } = "Publicidad por rubro (correo)";
     public int MaximoPorDia { get; set; } = 200;
-    /// <summary>A quién inscribe: "Correo" (con correo válido), "Celular" (sin correo, con celular) o "Fijo" (sin correo, solo teléfono fijo).</summary>
+    /// <summary>A quién inscribe: "Correo" (con correo válido), "Celular" (sin correo, con celular), "Fijo" (sin correo, solo teléfono fijo)
+    /// o "Cualquiera" (prospecto nuevo con correo o teléfono; la campaña mezcla canales).</summary>
     public string Destino { get; set; } = "Correo";
+    /// <summary>Opcional: solo prospectos cuyo rubro empieza con este texto (p. ej. "Salud").</summary>
+    public string? Rubro { get; set; }
+    /// <summary>Opcional: solo prospectos cuyo origen empieza con este texto (p. ej. "Lista: 07-plan").</summary>
+    public string? Origen { get; set; }
+    public bool EsEspecifica => !string.IsNullOrWhiteSpace(Rubro) || !string.IsNullOrWhiteSpace(Origen);
 }
 
 public record ResultadoEnvio(bool Exito, string? ProveedorId, string? Error)
