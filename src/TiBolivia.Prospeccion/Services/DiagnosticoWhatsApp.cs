@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 namespace TiBolivia.Prospeccion.Services;
 
 public record InfoNumero(string? Numero, string? NombreVerificado, string? Calidad, string? EstadoNombre, string? LimiteMensajes);
-public record PlantillaMeta(string Nombre, string Idioma, string Estado, string Categoria);
+public record PlantillaMeta(string Nombre, string Idioma, string Estado, string Categoria, string? Motivo = null);
 
 /// <summary>Consultas de solo lectura a la API de Meta para verificar la configuración de WhatsApp.</summary>
 public class DiagnosticoWhatsApp(HttpClient http, IOptionsSnapshot<WhatsAppOptions> opciones)
@@ -23,9 +23,9 @@ public class DiagnosticoWhatsApp(HttpClient http, IOptionsSnapshot<WhatsAppOptio
 
     public async Task<List<PlantillaMeta>> ListarPlantillasAsync(CancellationToken ct)
     {
-        using var doc = await GetAsync(O.Url($"{O.BusinessAccountId}/message_templates?fields=name,language,status,category&limit=200"), ct);
+        using var doc = await GetAsync(O.Url($"{O.BusinessAccountId}/message_templates?fields=name,language,status,category,rejected_reason&limit=200"), ct);
         return doc.RootElement.GetProperty("data").EnumerateArray()
-            .Select(t => new PlantillaMeta(Texto(t, "name") ?? "", Texto(t, "language") ?? "", Texto(t, "status") ?? "", Texto(t, "category") ?? ""))
+            .Select(t => new PlantillaMeta(Texto(t, "name") ?? "", Texto(t, "language") ?? "", Texto(t, "status") ?? "", Texto(t, "category") ?? "", Texto(t, "rejected_reason")))
             .OrderBy(t => t.Nombre).ToList();
     }
 

@@ -92,6 +92,32 @@ using (var scope = app.Services.CreateScope())
     await app.Services.GetRequiredService<AjustesGuardados>().RecargarAsync();
 }
 
+// Consulta de solo lectura para el diagnóstico del servidor: estado del número y de las plantillas en Meta.
+if (args.Contains("--plantillas-meta"))
+{
+    using var scope = app.Services.CreateScope();
+    var diag = scope.ServiceProvider.GetRequiredService<DiagnosticoWhatsApp>();
+    try
+    {
+        var n = await diag.ObtenerNumeroAsync(CancellationToken.None);
+        Console.WriteLine($"Número: {n.Numero} · Nombre: {n.NombreVerificado} ({n.EstadoNombre}) · Calidad: {n.Calidad} · Límite: {n.LimiteMensajes}");
+        var meta = await diag.ListarPlantillasAsync(CancellationToken.None);
+        Console.WriteLine($"Plantillas en Meta: {meta.Count}");
+        foreach (var t in meta)
+            Console.WriteLine($"  {t.Nombre} [{t.Idioma}] {t.Categoria}: {t.Estado}{(string.IsNullOrEmpty(t.Motivo) || t.Motivo == "NONE" ? "" : " · motivo: " + t.Motivo)}");
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var usadas = await db.Plantillas.Where(p => p.Canal == Canal.WhatsApp && p.WhatsAppPlantillaMeta != null).ToListAsync();
+        Console.WriteLine("Plantillas del sistema que usan una plantilla de Meta:");
+        foreach (var p in usadas)
+        {
+            var m = meta.FirstOrDefault(x => x.Nombre == p.WhatsAppPlantillaMeta && x.Idioma == p.WhatsAppIdioma);
+            Console.WriteLine($"  {p.Nombre} -> {p.WhatsAppPlantillaMeta} [{p.WhatsAppIdioma}]: {m?.Estado ?? "NO EXISTE EN META"}");
+        }
+    }
+    catch (Exception ex) { Console.WriteLine("Error consultando Meta: " + ex.Message); }
+    return;
+}
+
 app.UseForwardedHeaders();
 if (!app.Environment.IsDevelopment())
 {

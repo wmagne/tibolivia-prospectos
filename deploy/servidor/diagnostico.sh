@@ -83,3 +83,6 @@ for s in mail default dkim s1 selector1 x; do r=$(consultar "$s._domainkey.tibol
 echo "IP del servidor de correo: $(consultar mail.tibolivia.com A) · PTR: $(consultar "$(consultar mail.tibolivia.com A | head -1 | awk -F. '{print $4"."$3"."$2"."$1}').in-addr.arpa" PTR)"
 echo "== Contenedores de correo"; docker ps --format '{{.Names}} {{.Image}}' | grep -iE "mail|postfix|dovecot|opendkim|rspamd" || echo "(no hay contenedores de correo; puede ser un servicio del sistema)"
 systemctl is-active postfix opendkim 2>/dev/null | paste -sd' ' | sed 's/^/postfix\/opendkim: /'
+echo "== WhatsApp en Meta: número y plantillas (solo lectura)"
+docker exec -e Logging__LogLevel__Default=Warning -e Logging__LogLevel__Microsoft=Warning tibolivia-prospectos-app \
+  dotnet TiBolivia.Prospeccion.dll --plantillas-meta 2>&1 | grep -vE "^(warn|info|fail):|^\s+(Microsoft|Storing|No XML|Failed to)" | tail -40 || true
