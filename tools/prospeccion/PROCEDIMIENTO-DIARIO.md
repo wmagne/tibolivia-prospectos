@@ -1,6 +1,6 @@
 # Búsqueda diaria de prospectos (tarea programada)
 
-Objetivo: encontrar empresas nuevas de Bolivia con contacto público, cargarlas al sistema y publicarlas.
+Objetivo: diversificar los servicios (una oportunidad nueva por día) y encontrar empresas nuevas de Bolivia con contacto público, cargarlas al sistema y publicarlas.
 Las campañas las inscriben solas (Campanas:AutoInscripcion en appsettings.json):
 con correo → "Publicidad por rubro (correo)"; con celular → "WhatsApp por rubro (envío manual)"; solo fijo → "Llamadas por rubro".
 
@@ -13,6 +13,13 @@ Trabaje en una carpeta temporal (TMP) fuera del repositorio para los CSV interme
 4. Lanzar 6 subagentes en paralelo (uno por segmento). Prompt de cada uno: "Lee y sigue tools/prospeccion/BRIEF.md
    (ruta absoluta del repositorio). El archivo existentes.txt está en TMP/existentes.txt. TU SEGMENTO: <segmento>.
    Archivo de salida: TMP/ronda/NN.csv". Presupuesto: 30 búsquedas por agente (el límite de 200 es compartido).
+4b. Lanzar además 1 subagente de OPORTUNIDADES (máximo 15 búsquedas): "Investiga UN rubro u oportunidad nueva para
+   TIBolivia (empresa cruceña de software, apps, CRM, facturación SIAT, correo corporativo, salud digital y formación
+   digital) que todavía no esté en docs/OPORTUNIDADES.md: un sector de Bolivia que esté digitalizándose, una norma
+   nueva que obligue a usar sistemas, un nicho desatendido, licitaciones o programas de apoyo. Devuelve: rubro, por qué
+   ahora (con dato concreto), qué vender, a qué clientes, primer paso y URL de la fuente. No inventes datos."
+   Agregue la fila arriba de la tabla de docs/OPORTUNIDADES.md y una línea nueva al final de segmentos.txt con
+   "Ciudad/es — <clientes de ese rubro> (contacto publicado)" para que la búsqueda de los próximos días traiga clientes.
 5. Unir: `python3 -I tools/prospeccion/unir.py TMP/ronda TMP/unido.csv TMP/existentes.txt`
    Si salieron 0 filas, no publicar; solo avanzar estado.txt.
 6. Copiar a `src/TiBolivia.Prospeccion/Data/Listas/web-diaria-AAAA-MM-DD.csv` (el sistema la carga sola al reiniciar, una sola vez).
@@ -22,7 +29,8 @@ Trabaje en una carpeta temporal (TMP) fuera del repositorio para los CSV interme
 9. Publicar: el push a main de un archivo en Data/Listas lanza solo el workflow `desplegar.yml` (instalar).
    Si tiene herramientas de GitHub (mcp__github__), espere a que termine bien.
 10. Si puede, verificar con accion=diagnostico (sección "Prospectos por origen" debe mostrar la lista nueva).
-11. Informar en español: empresas nuevas, cuántas con correo/celular/fijo, rubros y ciudades, y el estado de las campañas.
+11. Informar en español: empresas nuevas, cuántas con correo/celular/fijo, rubros y ciudades, la oportunidad del día
+    (rubro, por qué ahora, qué vender y fuente) y el estado de las campañas.
 
 Reglas: solo datos públicos de empresas (nunca inventar correos ni recoger datos personales), sin duplicados,
 no enviar nada a ninguna empresa desde la búsqueda: los envíos los hacen las campañas del sistema.
