@@ -41,6 +41,52 @@
     @if (!Model.O.EsMeta) { <div class="alert alert-warning small mt-2 mb-0">El proveedor activo es TextMeBot. Elija "1 = Meta" en el script para usar este asistente.</div> }
 </div>
 
+<div class="card p-3 mb-3">
+    <h5>Número real de la empresa</h5>
+    <p class="small text-muted">El número no puede estar activo en la app de WhatsApp o WhatsApp Business de un celular (si lo está, borre esa cuenta primero).
+        El nombre visible lo revisa Meta (1–2 días); mientras tanto el número ya puede enviar.</p>
+    @if (Model.Numeros is { Count: > 0 })
+    {
+        <div class="table-responsive"><table class="table table-sm small">
+            <thead><tr><th>Número</th><th>Nombre</th><th>Verificación</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var n in Model.Numeros)
+            {
+                var actual = n.Id == Model.O.PhoneNumberId;
+                <tr class="@(actual ? "table-success" : "")">
+                    <td>@n.Numero @if (actual) { <span class="badge bg-success">en uso</span> }</td>
+                    <td>@n.Nombre <span class="text-muted">(@n.EstadoNombre)</span></td>
+                    <td>@n.Verificacion</td>
+                    <td>@n.Estado</td>
+                    <td>
+                        @if (!actual)
+                        {
+                            <div class="d-flex flex-wrap gap-1">
+                                <form method="post" asp-page-handler="Codigo" class="d-inline"><input type="hidden" name="NumeroId" value="@n.Id" />
+                                    <button name="metodo" value="SMS" class="btn btn-sm btn-outline-primary">1 · Código por SMS</button>
+                                    <button name="metodo" value="VOICE" class="btn btn-sm btn-outline-secondary">o por llamada</button></form>
+                                <form method="post" asp-page-handler="Verificar" class="d-inline-flex gap-1"><input type="hidden" name="NumeroId" value="@n.Id" />
+                                    <input name="Codigo" class="form-control form-control-sm" style="width:7rem" placeholder="Código" />
+                                    <button class="btn btn-sm btn-outline-primary">2 · Verificar</button></form>
+                                <form method="post" asp-page-handler="UsarNumero" class="d-inline-flex gap-1"><input type="hidden" name="NumeroId" value="@n.Id" />
+                                    <input name="Pin" class="form-control form-control-sm" style="width:7rem" placeholder="PIN 6 dígitos" maxlength="6" />
+                                    <button class="btn btn-sm btn-success">3 · Registrar y usar</button></form>
+                            </div>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table></div>
+    }
+    <form method="post" asp-page-handler="AgregarNumero" class="row g-2 align-items-end">
+        <div class="col-3 col-md-2"><label class="form-label small">País</label><input asp-for="CodigoPais" class="form-control form-control-sm" /></div>
+        <div class="col-9 col-md-4"><label class="form-label small">Número (sin +591)</label><input asp-for="NumeroNuevo" class="form-control form-control-sm" placeholder="64609998" /></div>
+        <div class="col-12 col-md-3"><label class="form-label small">Nombre visible</label><input asp-for="NombreVisible" class="form-control form-control-sm" /></div>
+        <div class="col-12 col-md-3"><button class="btn btn-sm btn-primary w-100">Agregar número a Meta</button></div>
+    </form>
+</div>
+
 <div class="row g-3 mb-3">
     <div class="col-lg-5">
         <form method="post" asp-page-handler="Registrar" class="card p-3 h-100">

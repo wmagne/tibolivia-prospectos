@@ -14,6 +14,7 @@ public class AsistenteMetaModel(
     IOptions<CampanasOptions> campanas,
     ConfiguradorMeta configurador,
     DiagnosticoWhatsApp diagnostico,
+    AjustesGuardados ajustes,
     AppDbContext db) : PageModel
 {
     public WhatsAppOptions O => opciones.Value;
@@ -27,6 +28,12 @@ public class AsistenteMetaModel(
     [BindProperty] public string? Pin { get; set; }
     [BindProperty] public PerfilEmpresa Perfil { get; set; } = new(null, null, null, null, null);
     [BindProperty] public string? UrlPublica { get; set; }
+    [BindProperty] public string CodigoPais { get; set; } = "591";
+    [BindProperty] public string? NumeroNuevo { get; set; }
+    [BindProperty] public string NombreVisible { get; set; } = "TIBolivia";
+    [BindProperty] public string? NumeroId { get; set; }
+    [BindProperty] public string? Codigo { get; set; }
+    public List<NumeroMeta>? Numeros { get; private set; }
 
     public async Task OnGetAsync()
     {
@@ -95,8 +102,64 @@ public class AsistenteMetaModel(
         }
     }
 
+    // ---------- Número real (alta, código de verificación y registro) ----------
+
+    public async Task<IActionResult> OnPostAgregarNumeroAsync()
+    {
+        var numero = new string((NumeroNuevo ?? "").Where(char.IsDigit).ToArray());
+        if (numero.Length < 7 || string.IsNullOrWhiteSpace(NombreVisible))
+            Resultados.Add(("Escriba el número (sin código de país) y el nombre visible.", false));
+        else
+            await EjecutarAsync($"Número +{CodigoPais} {numero} agregado a la cuenta de WhatsApp. Ahora pida el código de verificación.",
+                async ct => NumeroId = await configurador.AgregarNumeroAsync(CodigoPais, numero, NombreVisible.Trim(), ct));
+        await CargarPlantillasAsync();
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostCodigoAsync(string metodo)
+    {
+        if (!string.IsNullOrEmpty(NumeroId))
+            await EjecutarAsync(metodo == "VOICE" ? "Meta está llamando al número para dictarle el código." : "Meta envió el código por SMS al número.",
+                ct => configurador.SolicitarCodigoAsync(NumeroId, metodo == "VOICE" ? "VOICE" : "SMS", ct));
+        await CargarPlantillasAsync();
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostVerificarAsync()
+    {
+        var codigo = new string((Codigo ?? "").Where(char.IsDigit).ToArray());
+        if (!string.IsNullOrEmpty(NumeroId) && codigo.Length > 0)
+            await EjecutarAsync("Código correcto: el número quedó verificado. Último paso: registrarlo con un PIN.",
+                ct => configurador.VerificarCodigoAsync(NumeroId, codigo, ct));
+        await CargarPlantillasAsync();
+        return Page();
+    }
+
+    /// <summary>Registra el número en la API y lo deja como número de envío del sistema.</summary>
+    public async Task<IActionResult> OnPostUsarNumeroAsync()
+    {
+        if (string.IsNullOrEmpty(NumeroId) || Pin is null || Pin.Length != 6 || !Pin.All(char.IsDigit))
+            Resultados.Add(("El PIN debe tener exactamente 6 dígitos.", false));
+        else if (await EjecutarAsync("Número registrado en la API de WhatsApp. Guarde el PIN: es la verificación en dos pasos del número.",
+                     ct => configurador.RegistrarNumeroAsync(Pin, ct, NumeroId)))
+        {
+            await ajustes.GuardarAsync(new Dictionary<string, string?> { ["WhatsApp:PhoneNumberId"] = NumeroId }, new HashSet<string>());
+            Resultados.Add(("El sistema ahora envía desde este número.", true));
+            await EjecutarAsync("App suscrita a la cuenta de WhatsApp (para recibir respuestas).", configurador.SuscribirAppAsync);
+        }
+        await CargarPlantillasAsync();
+        return Page();
+    }
+
     private async Task CargarPlantillasAsync()
     {
+        if (DatosPlantillas)
+        {
+            try { Numeros = await diagnostico.ListarNumerosAsync(HttpContext.RequestAborted); }
+            catch (Exception ex) when (ex is InvalidOperationException or HttpRequestException)
+            { Resultados.Add(("No se pudieron leer los números de la cuenta: " + ex.Message, false)); }
+        }
+
         var sistema = await db.Plantillas.Where(p => p.Canal == Canal.WhatsApp && p.WhatsAppPlantillaMeta != null)
             .OrderBy(p => p.Nombre).ToListAsync();
         List<PlantillaMeta>? meta = null;

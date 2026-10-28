@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 namespace TiBolivia.Prospeccion.Services;
 
 public record InfoNumero(string? Numero, string? NombreVerificado, string? Calidad, string? EstadoNombre, string? LimiteMensajes);
+public record NumeroMeta(string Id, string? Numero, string? Nombre, string? Verificacion, string? Estado, string? EstadoNombre);
 public record PlantillaMeta(string Nombre, string Idioma, string Estado, string Categoria, string? Motivo = null);
 
 /// <summary>Consultas de solo lectura a la API de Meta para verificar la configuración de WhatsApp.</summary>
@@ -19,6 +20,15 @@ public class DiagnosticoWhatsApp(HttpClient http, IOptionsSnapshot<WhatsAppOptio
         var r = doc.RootElement;
         return new InfoNumero(Texto(r, "display_phone_number"), Texto(r, "verified_name"), Texto(r, "quality_rating"),
             Texto(r, "name_status"), Texto(r, "messaging_limit_tier"));
+    }
+
+    /// <summary>Números de la cuenta de WhatsApp (incluye los pendientes de verificar).</summary>
+    public async Task<List<NumeroMeta>> ListarNumerosAsync(CancellationToken ct)
+    {
+        using var doc = await GetAsync(O.Url($"{O.BusinessAccountId}/phone_numbers?fields=id,display_phone_number,verified_name,code_verification_status,status,name_status"), ct);
+        return doc.RootElement.GetProperty("data").EnumerateArray()
+            .Select(n => new NumeroMeta(Texto(n, "id") ?? "", Texto(n, "display_phone_number"), Texto(n, "verified_name"),
+                Texto(n, "code_verification_status"), Texto(n, "status"), Texto(n, "name_status"))).ToList();
     }
 
     public async Task<List<PlantillaMeta>> ListarPlantillasAsync(CancellationToken ct)

@@ -18,8 +18,24 @@ public partial class ConfiguradorMeta(HttpClient http, IOptionsSnapshot<WhatsApp
     private WhatsAppOptions O => opciones.Value;
 
     /// <summary>Registra el número en la Cloud API. El PIN de 6 dígitos queda como verificación en dos pasos: anótelo.</summary>
-    public Task RegistrarNumeroAsync(string pin, CancellationToken ct) =>
-        PostAsync(O.Url($"{O.PhoneNumberId}/register"), new { messaging_product = "whatsapp", pin }, ct);
+    public Task RegistrarNumeroAsync(string pin, CancellationToken ct, string? phoneNumberId = null) =>
+        PostAsync(O.Url($"{phoneNumberId ?? O.PhoneNumberId}/register"), new { messaging_product = "whatsapp", pin }, ct);
+
+    /// <summary>Agrega un número a la cuenta de WhatsApp (queda pendiente de verificar con código). Devuelve su Phone Number ID.</summary>
+    public async Task<string> AgregarNumeroAsync(string codigoPais, string numero, string nombreVisible, CancellationToken ct)
+    {
+        var cuerpo = await PostAsync(O.Url($"{O.BusinessAccountId}/phone_numbers"),
+            new { cc = codigoPais, phone_number = numero, verified_name = nombreVisible }, ct);
+        using var doc = JsonDocument.Parse(cuerpo);
+        return doc.RootElement.GetProperty("id").GetString() ?? throw new InvalidOperationException("Meta no devolvió el identificador del número.");
+    }
+
+    /// <summary>Pide a Meta que envíe el código de verificación al número (SMS o VOICE).</summary>
+    public Task SolicitarCodigoAsync(string phoneNumberId, string metodo, CancellationToken ct) =>
+        PostAsync(O.Url($"{phoneNumberId}/request_code"), new { code_method = metodo, language = "es" }, ct);
+
+    public Task VerificarCodigoAsync(string phoneNumberId, string codigo, CancellationToken ct) =>
+        PostAsync(O.Url($"{phoneNumberId}/verify_code"), new { code = codigo }, ct);
 
     public Task ActualizarPerfilAsync(PerfilEmpresa p, CancellationToken ct)
     {
@@ -108,7 +124,7 @@ public partial class ConfiguradorMeta(HttpClient http, IOptionsSnapshot<WhatsApp
         _ => "ejemplo",
     };
 
-    private async Task PostAsync(string url, object? cuerpo, CancellationToken ct, bool usarToken = true)
+    private async Task<string> PostAsync(string url, object? cuerpo, CancellationToken ct, bool usarToken = true)
     {
         using var req = new HttpRequestMessage(HttpMethod.Post, url);
         if (cuerpo is not null)
@@ -117,6 +133,7 @@ public partial class ConfiguradorMeta(HttpClient http, IOptionsSnapshot<WhatsApp
         using var resp = await http.SendAsync(req, ct);
         if (!resp.IsSuccessStatusCode)
             throw new InvalidOperationException(DiagnosticoWhatsApp.ErrorLegible(await resp.Content.ReadAsStringAsync(ct), (int)resp.StatusCode));
+        return await resp.Content.ReadAsStringAsync(ct);
     }
 
     private static string Recortar(string s, int max) => s.Trim().Length <= max ? s.Trim() : s.Trim()[..max];
