@@ -5,6 +5,7 @@ Las campañas las inscriben solas (Campanas:AutoInscripcion en appsettings.json)
 con correo → "Publicidad por rubro (correo)"; con celular → "WhatsApp por rubro (envío manual)"; solo fijo → "Llamadas por rubro".
 
 Repositorio: wmagne/tibolivia-prospectos · rama de trabajo: claude/dazzling-meitner-6s8v1b · se publica en main.
+Se ejecuta dentro de la sesión principal del proyecto (la que tiene permiso de push); una sesión nueva sin el repositorio en sus fuentes no puede publicar.
 Trabaje en una carpeta temporal (TMP) fuera del repositorio para los CSV intermedios.
 
 1. Actualizar el repositorio (rama de trabajo) y fusionar main si hiciera falta.
