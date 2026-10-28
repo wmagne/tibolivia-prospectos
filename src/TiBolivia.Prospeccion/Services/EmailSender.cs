@@ -7,7 +7,7 @@ using MimeKit;
 namespace TiBolivia.Prospeccion.Services;
 
 public record CorreoSaliente(string Para, string? NombrePara, string Asunto, string Html, string LinkBaja, string? ResponderA,
-    string? AdjuntoNombre = null, byte[]? AdjuntoContenido = null);
+    string? AdjuntoNombre = null, byte[]? AdjuntoContenido = null, string? Copia = null, bool Interno = false);
 
 public interface IEnviadorEmail
 {
@@ -22,14 +22,20 @@ public partial class EnviadorEmailSmtp(IOptions<SmtpOptions> opciones, ILogger<E
         var msg = new MimeMessage();
         msg.From.Add(new MailboxAddress(o.RemitenteNombre, o.RemitenteEmail));
         msg.To.Add(new MailboxAddress(c.NombrePara ?? "", c.Para));
+        foreach (var cc in (c.Copia ?? "").Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            msg.Cc.Add(MailboxAddress.Parse(cc));
         if (!string.IsNullOrWhiteSpace(c.ResponderA)) msg.ReplyTo.Add(MailboxAddress.Parse(c.ResponderA));
         msg.Subject = c.Asunto;
-        // Baja en un clic (RFC 8058): Gmail y Outlook la exigen para envíos masivos.
-        msg.Headers.Add("List-Unsubscribe", $"<{c.LinkBaja}>");
-        msg.Headers.Add("List-Unsubscribe-Post", "List-Unsubscribe=One-Click");
+        if (!c.Interno)
+        {
+            // Baja en un clic (RFC 8058): Gmail y Outlook la exigen para envíos masivos.
+            msg.Headers.Add("List-Unsubscribe", $"<{c.LinkBaja}>");
+            msg.Headers.Add("List-Unsubscribe-Post", "List-Unsubscribe=One-Click");
+        }
 
-        var html = DisenoCorreo.Envolver(c.Html, c.LinkBaja);
-        var cuerpo = new BodyBuilder { HtmlBody = html, TextBody = ATexto(c.Html) + $"\n\nDarse de baja: {c.LinkBaja}" };
+        // Los correos internos (reportes) llevan su propio HTML, sin pie de baja.
+        var html = c.Interno ? c.Html : DisenoCorreo.Envolver(c.Html, c.LinkBaja);
+        var cuerpo = new BodyBuilder { HtmlBody = html, TextBody = ATexto(c.Html) + (c.Interno ? "" : $"\n\nDarse de baja: {c.LinkBaja}") };
         if (c.AdjuntoContenido is { Length: > 0 } && !string.IsNullOrWhiteSpace(c.AdjuntoNombre))
             cuerpo.Attachments.Add(c.AdjuntoNombre, c.AdjuntoContenido);
         msg.Body = cuerpo.ToMessageBody();

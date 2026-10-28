@@ -47,6 +47,7 @@ builder.Services.Configure<ImapOptions>(builder.Configuration.GetSection("Imap")
 builder.Services.Configure<WhatsAppOptions>(builder.Configuration.GetSection("WhatsApp"));
 builder.Services.Configure<ChatbotOptions>(builder.Configuration.GetSection("Chatbot"));
 builder.Services.Configure<CampanasOptions>(builder.Configuration.GetSection("Campanas"));
+builder.Services.Configure<ReportesOptions>(builder.Configuration.GetSection("Reportes"));
 
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<HorarioLaboral>();
@@ -65,12 +66,14 @@ builder.Services.AddHttpClient<ConfiguradorMeta>();
 builder.Services.AddScoped<MotorCampanas>();
 builder.Services.AddScoped<ServicioInscripciones>();
 builder.Services.AddScoped<InscripcionAutomatica>();
+builder.Services.AddScoped<ReporteDiario>();
 builder.Services.AddScoped<LectorRespuestasEmail>();
 builder.Services.AddScoped<ImportadorProspectos>();
 if (builder.Configuration.GetValue("Campanas:WorkerHabilitado", true))
 {
     builder.Services.AddHostedService<WorkerCampanas>();
     builder.Services.AddHostedService<WorkerRespuestasEmail>();
+    builder.Services.AddHostedService<WorkerReporteDiario>();
 }
 
 builder.Services.Configure<ForwardedHeadersOptions>(o =>
@@ -90,6 +93,14 @@ using (var scope = app.Services.CreateScope())
 {
     await DatosIniciales.InicializarAsync(scope.ServiceProvider, app.Configuration);
     await app.Services.GetRequiredService<AjustesGuardados>().RecargarAsync();
+}
+
+// Vista previa del reporte diario (solo lectura): dotnet TiBolivia.Prospeccion.dll --reporte-html
+if (args.Contains("--reporte-html"))
+{
+    using var scope = app.Services.CreateScope();
+    Console.WriteLine(await scope.ServiceProvider.GetRequiredService<ReporteDiario>().ArmarAsync(Fechas.HoyBolivia, CancellationToken.None));
+    return;
 }
 
 // Consulta de solo lectura para el diagnóstico del servidor: estado del número y de las plantillas en Meta.

@@ -121,3 +121,15 @@ public record ResultadoEnvio(bool Exito, string? ProveedorId, string? Error)
     public static ResultadoEnvio Ok(string? id) => new(true, id, null);
     public static ResultadoEnvio Falla(string error) => new(false, null, error);
 }
+
+/// <summary>Reporte diario de actividades por correo (ver ReporteDiario).</summary>
+public class ReportesOptions
+{
+    public bool Habilitado { get; set; }
+    public string? Para { get; set; }
+    /// <summary>Copia; varias direcciones separadas por coma.</summary>
+    public string? Copia { get; set; }
+    /// <summary>Hora local (Bolivia) a partir de la cual se envía el reporte del día.</summary>
+    public int HoraEnvio { get; set; } = 18;
+    public int MinutoEnvio { get; set; } = 30;
+}
