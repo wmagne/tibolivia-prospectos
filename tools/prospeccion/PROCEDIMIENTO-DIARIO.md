@@ -19,8 +19,9 @@ Trabaje en una carpeta temporal (TMP) fuera del repositorio para los CSV interme
 7. Guardar en estado.txt el nuevo índice (N+6, circular). `dotnet build -c Release` debe compilar.
 8. Commit ("Búsqueda diaria de prospectos AAAA-MM-DD: N empresas") con los trailers de atribución de la sesión,
    push a la rama de trabajo y a main.
-9. Publicar: workflow `desplegar.yml` en main con accion=instalar, dominio=prospectos.tibolivia.com. Esperar que termine bien.
-10. Verificar con accion=diagnostico (sección "Prospectos por origen" debe mostrar la lista nueva).
+9. Publicar: el push a main de un archivo en Data/Listas lanza solo el workflow `desplegar.yml` (instalar).
+   Si tiene herramientas de GitHub (mcp__github__), espere a que termine bien.
+10. Si puede, verificar con accion=diagnostico (sección "Prospectos por origen" debe mostrar la lista nueva).
 11. Informar en español: empresas nuevas, cuántas con correo/celular/fijo, rubros y ciudades, y el estado de las campañas.
 
 Reglas: solo datos públicos de empresas (nunca inventar correos ni recoger datos personales), sin duplicados,

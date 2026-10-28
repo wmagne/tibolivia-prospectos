@@ -8,7 +8,11 @@ name: Desplegar en servidor
 #   SMTP_CLAVE               (opcional) contraseña de comercial@tibolivia.com
 #   WHATSAPP_ACCESS_TOKEN, WHATSAPP_APP_SECRET, TEXTMEBOT_API_KEY (opcionales)
 # Variables (opcionales): WHATSAPP_PROVEEDOR, WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_BUSINESS_ACCOUNT_ID, WHATSAPP_APP_ID, CHATBOT_URL
+# También se instala solo cuando llega a main una lista nueva de prospectos (búsqueda diaria).
 on:
+  push:
+    branches: [main]
+    paths: ["src/TiBolivia.Prospeccion/Data/Listas/**"]
   workflow_dispatch:
     inputs:
       accion:
@@ -35,6 +39,8 @@ concurrency: desplegar-prospectos
 env:
   SERVIDOR: ${{ vars.SERVIDOR_IP || '158.220.123.156' }}
   USUARIO: ${{ vars.SERVIDOR_USUARIO || 'root' }}
+  ACCION: ${{ inputs.accion || 'instalar' }}
+  DOMINIO: ${{ inputs.dominio || 'prospectos.tibolivia.com' }}
 
 jobs:
   desplegar:
@@ -57,10 +63,10 @@ jobs:
       - name: Diagnóstico del servidor (solo lectura)
         env:
           SSHPASS: ${{ secrets.SERVIDOR_CLAVE_SSH }}
-        run: sshpass -e ssh "$USUARIO@$SERVIDOR" "bash -s -- '${{ inputs.dominio }}'" < deploy/servidor/diagnostico.sh
+        run: sshpass -e ssh "$USUARIO@$SERVIDOR" "bash -s -- '${{ env.DOMINIO }}'" < deploy/servidor/diagnostico.sh
 
       - name: Cambiar el correo de un usuario
-        if: inputs.accion == 'cambiar-correo'
+        if: env.ACCION == 'cambiar-correo'
         env:
           SSHPASS: ${{ secrets.SERVIDOR_CLAVE_SSH }}
           ACTUAL: ${{ inputs.correo_actual }}
@@ -71,7 +77,7 @@ jobs:
           sshpass -e ssh "$USUARIO@$SERVIDOR" "bash -s -- $(printf '%q' "$ACTUAL") $(printf '%q' "$NUEVO")" < deploy/servidor/cambiar-correo-admin.sh
 
       - name: Copiar el código al servidor
-        if: inputs.accion == 'instalar'
+        if: env.ACCION == 'instalar'
         env:
           SSHPASS: ${{ secrets.SERVIDOR_CLAVE_SSH }}
         run: |
@@ -80,7 +86,7 @@ jobs:
           sshpass -e ssh "$USUARIO@$SERVIDOR" 'rm -rf /opt/tibolivia-prospectos-src && mkdir -p /opt/tibolivia-prospectos-src && tar xzf /tmp/prospectos.tgz --no-same-owner -C /opt/tibolivia-prospectos-src && rm /tmp/prospectos.tgz'
 
       - name: Instalar / actualizar
-        if: inputs.accion == 'instalar'
+        if: env.ACCION == 'instalar'
         env:
           SSHPASS: ${{ secrets.SERVIDOR_CLAVE_SSH }}
           ADMIN_CLAVE: ${{ secrets.PROSPECTOS_ADMIN_CLAVE }}
@@ -105,12 +111,12 @@ jobs:
                      WHATSAPP_PROVEEDOR WHATSAPP_PHONE_NUMBER_ID WHATSAPP_BUSINESS_ACCOUNT_ID WHATSAPP_APP_ID CHATBOT_URL; do
               IFS= read -r \$v || true; export \$v
             done
-            bash /opt/tibolivia-prospectos-src/deploy/servidor/desplegar.sh '${{ inputs.dominio }}'"
+            bash /opt/tibolivia-prospectos-src/deploy/servidor/desplegar.sh '${{ env.DOMINIO }}'"
 
       - name: Verificar el sitio
-        if: inputs.accion == 'instalar'
+        if: env.ACCION == 'instalar'
         run: |
-          for url in "https://${{ inputs.dominio }}/health" "http://${{ inputs.dominio }}/health"; do
+          for url in "https://${{ env.DOMINIO }}/health" "http://${{ env.DOMINIO }}/health"; do
             if curl -fsS --max-time 20 "$url"; then echo; echo "Sitio respondiendo en $url"; exit 0; fi
           done
-          echo "::warning::El sitio aún no responde por el dominio (¿falta el registro DNS de ${{ inputs.dominio }}?)"
+          echo "::warning::El sitio aún no responde por el dominio (¿falta el registro DNS de ${{ env.DOMINIO }}?)"
