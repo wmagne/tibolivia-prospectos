@@ -101,6 +101,8 @@ if (args.Contains("--plantillas-meta"))
     {
         var n = await diag.ObtenerNumeroAsync(CancellationToken.None);
         Console.WriteLine($"Número: {n.Numero} · Nombre: {n.NombreVerificado} ({n.EstadoNombre}) · Calidad: {n.Calidad} · Límite: {n.LimiteMensajes}");
+        try { foreach (var l in await diag.InventarioPortafolioAsync(CancellationToken.None)) Console.WriteLine(l); }
+        catch (Exception ex) { Console.WriteLine("No se pudo leer el portafolio: " + ex.Message); }
         var meta = await diag.ListarPlantillasAsync(CancellationToken.None);
         Console.WriteLine($"Plantillas en Meta: {meta.Count}");
         foreach (var t in meta)

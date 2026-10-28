@@ -31,6 +31,33 @@ public class DiagnosticoWhatsApp(HttpClient http, IOptionsSnapshot<WhatsAppOptio
                 Texto(n, "code_verification_status"), Texto(n, "status"), Texto(n, "name_status"))).ToList();
     }
 
+    /// <summary>Todas las cuentas de WhatsApp del portafolio dueño de la cuenta configurada, con sus números (texto para diagnóstico).</summary>
+    public async Task<List<string>> InventarioPortafolioAsync(CancellationToken ct)
+    {
+        var lineas = new List<string>();
+        using var waba = await GetAsync(O.Url($"{O.BusinessAccountId}?fields=name,owner_business_info"), ct);
+        var negocio = waba.RootElement.TryGetProperty("owner_business_info", out var ob) ? ob : default;
+        var negocioId = negocio.ValueKind == JsonValueKind.Object ? Texto(negocio, "id") : null;
+        lineas.Add($"Cuenta configurada: {Texto(waba.RootElement, "name")} ({O.BusinessAccountId}) · Portafolio: {(negocio.ValueKind == JsonValueKind.Object ? Texto(negocio, "name") : "?")} ({negocioId})");
+        if (negocioId is null) return lineas;
+        foreach (var tipo in new[] { "owned_whatsapp_business_accounts", "client_whatsapp_business_accounts" })
+        {
+            try
+            {
+                using var cuentas = await GetAsync(O.Url($"{negocioId}/{tipo}?fields=id,name&limit=50"), ct);
+                foreach (var c in cuentas.RootElement.GetProperty("data").EnumerateArray())
+                {
+                    lineas.Add($"[{tipo.Split('_')[0]}] Cuenta {Texto(c, "name")} ({Texto(c, "id")})");
+                    using var nums = await GetAsync(O.Url($"{Texto(c, "id")}/phone_numbers?fields=id,display_phone_number,verified_name,code_verification_status,status,platform_type"), ct);
+                    foreach (var n in nums.RootElement.GetProperty("data").EnumerateArray())
+                        lineas.Add($"    {Texto(n, "display_phone_number")} · {Texto(n, "verified_name")} · id {Texto(n, "id")} · {Texto(n, "code_verification_status")} · {Texto(n, "status")} · {Texto(n, "platform_type")}");
+                }
+            }
+            catch (InvalidOperationException ex) { lineas.Add($"No se pudo leer {tipo}: {ex.Message}"); }
+        }
+        return lineas;
+    }
+
     public async Task<List<PlantillaMeta>> ListarPlantillasAsync(CancellationToken ct)
     {
         using var doc = await GetAsync(O.Url($"{O.BusinessAccountId}/message_templates?fields=name,language,status,category,rejected_reason&limit=200"), ct);
