@@ -102,6 +102,8 @@ public class CampanasOptions
     /// <summary>URL pública del sistema (para enlaces de baja en los correos).</summary>
     public string UrlPublica { get; set; } = "https://localhost:7058";
     public AutoInscripcionOptions AutoInscripcion { get; set; } = new();
+    /// <summary>Reglas adicionales, p. ej. campañas de WhatsApp o llamadas para prospectos sin correo.</summary>
+    public List<AutoInscripcionOptions> OtrasAutoInscripciones { get; set; } = [];
 }
 
 /// <summary>Inscripción gradual de los prospectos nuevos con correo en una campaña (ver InscripcionAutomatica).</summary>
@@ -110,6 +112,8 @@ public class AutoInscripcionOptions
     public bool Habilitada { get; set; }
     public string Campana { get; set; } = "Publicidad por rubro (correo)";
     public int MaximoPorDia { get; set; } = 200;
+    /// <summary>A quién inscribe: "Correo" (con correo válido), "Celular" (sin correo, con celular) o "Fijo" (sin correo, solo teléfono fijo).</summary>
+    public string Destino { get; set; } = "Correo";
 }
 
 public record ResultadoEnvio(bool Exito, string? ProveedorId, string? Error)

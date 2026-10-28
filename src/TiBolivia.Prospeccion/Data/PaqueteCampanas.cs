@@ -175,6 +175,7 @@ public static class PaqueteCampanas
 
         await CampanasSantaCruzAsync(db);
         await PublicidadPorRubroAsync(db, software);
+        await TelefonoPorRubroAsync(db, software);
         await db.SaveChangesAsync();
     }
 
@@ -341,6 +342,37 @@ public static class PaqueteCampanas
             ]);
     }
 
+    /// <summary>
+    /// Prospectos sin correo: el sistema arma las tareas con el mensaje listo (según el rubro) y el comercial
+    /// lo envía desde su celular con un clic, o llama. Se crean ACTIVAS porque no envían nada por sí solas.
+    /// </summary>
+    private static async Task TelefonoPorRubroAsync(AppDbContext db, Servicio software)
+    {
+        await CampanaAsync(db, "WhatsApp por rubro (envío manual)",
+            "Para empresas con celular y sin correo. Cada día aparecen en \"Tareas\" los WhatsApp del día con el texto listo: botón WhatsApp, revisar y enviar desde su celular.",
+            software,
+            [
+                new(0, await TareaAsync(db, "WhatsApp 1 · Presentación por rubro (tarea)",
+                    "Enviar WhatsApp de presentación a {{Empresa}}",
+                    "Buenos días, le saluda {{Comercial}} de TIBolivia, empresa boliviana de desarrollo de software. {{PropuestaRubro}} Para {{Empresa}} pensamos en {{Necesidad}}. ¿Le puedo enviar una propuesta corta o agendar 30 minutos de diagnóstico sin costo?")),
+                new(3, await TareaAsync(db, "WhatsApp 2 · Seguimiento por rubro (tarea)",
+                    "WhatsApp de seguimiento a {{Empresa}}",
+                    "Hola, le escribo nuevamente de TIBolivia. {{TitularRubro}}: eso es lo que logramos con sistemas a medida para empresas como {{Empresa}}. ¿Le parece si conversamos 30 minutos esta semana, sin costo ni compromiso?")),
+            ], activa: true);
+
+        await CampanaAsync(db, "Llamadas por rubro (teléfono fijo)",
+            "Para empresas que solo tienen teléfono fijo. El objetivo de la llamada es conseguir el correo o celular del encargado y agendar el diagnóstico gratuito.",
+            software,
+            [
+                new(0, await TareaAsync(db, "Llamada 1 · Presentación por rubro (tarea)",
+                    "Llamar a {{Empresa}} (presentación)",
+                    "Guion: \"Buenos días, soy {{Comercial}} de TIBolivia, empresa de desarrollo de software. {{PropuestaRubro}} ¿Con quién puedo hablar sobre sistemas o tecnología?\" Ofrezca el diagnóstico gratuito de 30 minutos ({{Necesidad}}). Pida el correo o el celular del encargado y regístrelo en la ficha para enviarle la propuesta.")),
+                new(5, await TareaAsync(db, "Llamada 2 · Segundo intento (tarea)",
+                    "Volver a llamar a {{Empresa}}",
+                    "Segundo intento. Si no contestan o no hay interés, registre el resultado y cierre la tarea. Si consiguió un correo, edítelo en la ficha e inscríbala en \"Publicidad por rubro (correo)\".")),
+            ], activa: true);
+    }
+
     private static async Task<Plantilla> TareaAsync(AppDbContext db, string nombre, string titulo, string texto) =>
         await db.Plantillas.FirstOrDefaultAsync(x => x.Nombre == nombre)
         ?? db.Plantillas.Local.FirstOrDefault(x => x.Nombre == nombre)
@@ -368,7 +400,7 @@ public static class PaqueteCampanas
             WhatsAppPlantillaMeta = plantillaMeta, WhatsAppIdioma = "es", WhatsAppParametros = parametros,
         }).Entity;
 
-    private static async Task CampanaAsync(AppDbContext db, string nombre, string descripcion, Servicio servicio, PasoDef[] pasos)
+    private static async Task CampanaAsync(AppDbContext db, string nombre, string descripcion, Servicio servicio, PasoDef[] pasos, bool activa = false)
     {
         if (await db.Campanas.AnyAsync(c => c.Nombre == nombre) || db.Campanas.Local.Any(c => c.Nombre == nombre)) return;
         db.Campanas.Add(new Campana
@@ -376,7 +408,7 @@ public static class PaqueteCampanas
             Nombre = nombre,
             Descripcion = descripcion,
             Servicio = servicio,
-            Activa = false,
+            Activa = activa,
             Pasos = pasos.Select((p, i) => new PasoCampana
             {
                 Orden = i + 1, DiasEspera = p.DiasEspera, Canal = p.Plantilla.Canal, Plantilla = p.Plantilla,
