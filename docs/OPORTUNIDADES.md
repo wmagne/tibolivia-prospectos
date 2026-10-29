@@ -5,6 +5,7 @@ Lo más reciente va arriba. Cada oportunidad agrega también un segmento a `tool
 
 | Fecha | Rubro u oportunidad | Por qué ahora | Qué vender | Primer paso | Fuente |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-29 | Gestión hotelera (PMS) para hoteles pequeños y hostales | DS 4574 exige reportar huéspedes a Migración en línea y el SIN pide el Módulo Hoteles del SIAT; 1,1 millones de turistas en 2025 y ocupación ≤40% en Santa Cruz | Sistema hotelero en la nube: check-in con una sola carga para Migración y SIAT, reservas directas, cobro QR y WhatsApp | Piloto de 60 días con la Cámara Hotelera de Santa Cruz y demo a 30 hostales | https://bolivia.infoleyes.com/norma/7687/decreto-supremo-4574 |
 | 2026-10-28 | Facturación electrónica SIAT para pymes | Plazo de migración de grupos 9–12 en septiembre de 2026 | Implementación, integración y capacitación | Contactar 10 farmacias y restaurantes | https://www.banqup.com/es-es/resources/compliance-pulse/bolivia |
 | 2026-10-28 | Salud digital para consultorios | Muchos consultorios aún usan informes a mano | Historia clínica, informes PDF y agenda con recordatorio | Piloto gratuito con 2 consultorios | Plan de negocio TIBolivia |
 | 2026-10-28 | Formación digital práctica | Empresas con personal que no aprovecha la tecnología | Talleres de IA, Excel y ciberseguridad | Proponer taller a CAINCO y UPSA–CENACE | Plan de negocio TIBolivia |
