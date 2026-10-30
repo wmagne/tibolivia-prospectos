@@ -20,7 +20,7 @@ on:
         required: true
         default: diagnostico
         type: choice
-        options: [diagnostico, instalar, cambiar-correo]
+        options: [diagnostico, instalar, cambiar-correo, whatsapp-completar]
       dominio:
         description: Dominio del sistema
         required: true
@@ -64,6 +64,13 @@ jobs:
         env:
           SSHPASS: ${{ secrets.SERVIDOR_CLAVE_SSH }}
         run: sshpass -e ssh "$USUARIO@$SERVIDOR" "bash -s -- '${{ env.DOMINIO }}'" < deploy/servidor/diagnostico.sh
+
+      - name: Completar WhatsApp (registrar número con PIN y conectar webhook)
+        if: env.ACCION == 'whatsapp-completar'
+        env:
+          SSHPASS: ${{ secrets.SERVIDOR_CLAVE_SSH }}
+        run: |
+          sshpass -e ssh "$USUARIO@$SERVIDOR" "docker exec -e Logging__LogLevel__Default=Warning tibolivia-prospectos-app dotnet TiBolivia.Prospeccion.dll --meta-completar 2>&1 | grep -E '^(OK|ERR|PIN)'"
 
       - name: Cambiar el correo de un usuario
         if: env.ACCION == 'cambiar-correo'

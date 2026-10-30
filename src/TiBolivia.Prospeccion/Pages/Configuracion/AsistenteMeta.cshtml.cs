@@ -18,6 +18,7 @@ public class AsistenteMetaModel(
     AppDbContext db) : PageModel
 {
     public WhatsAppOptions O => opciones.Value;
+    public string? PinGuardado => ajustes.Obtener(ConfiguradorMeta.ClavePin);
     public bool DatosBasicos => !string.IsNullOrWhiteSpace(O.AccessToken) && !string.IsNullOrWhiteSpace(O.PhoneNumberId);
     public bool DatosPlantillas => DatosBasicos && !string.IsNullOrWhiteSpace(O.BusinessAccountId);
     public bool DatosWebhook => DatosPlantillas && !string.IsNullOrWhiteSpace(O.AppId) && !string.IsNullOrWhiteSpace(O.AppSecret) && !string.IsNullOrWhiteSpace(O.VerifyToken);
@@ -50,8 +51,11 @@ public class AsistenteMetaModel(
         if (Pin is null || Pin.Length != 6 || !Pin.All(char.IsDigit))
             Resultados.Add(("El PIN debe tener exactamente 6 dígitos.", false));
         else
-            await EjecutarAsync("Número registrado en la API de WhatsApp. Guarde el PIN: es la verificación en dos pasos del número.",
-                ct => configurador.RegistrarNumeroAsync(Pin, ct));
+        {
+            if (await EjecutarAsync("Número registrado en la API de WhatsApp. El PIN quedó guardado (cifrado) en el sistema.",
+                    ct => configurador.RegistrarNumeroAsync(Pin, ct)))
+                await ajustes.GuardarAsync(new Dictionary<string, string?> { [ConfiguradorMeta.ClavePin] = Pin }, new HashSet<string> { ConfiguradorMeta.ClavePin });
+        }
         await CargarPlantillasAsync();
         return Page();
     }
@@ -143,6 +147,7 @@ public class AsistenteMetaModel(
         else if (await EjecutarAsync("Número registrado en la API de WhatsApp. Guarde el PIN: es la verificación en dos pasos del número.",
                      ct => configurador.RegistrarNumeroAsync(Pin, ct, NumeroId)))
         {
+            await ajustes.GuardarAsync(new Dictionary<string, string?> { [ConfiguradorMeta.ClavePin] = Pin }, new HashSet<string> { ConfiguradorMeta.ClavePin });
             await ajustes.GuardarAsync(new Dictionary<string, string?> { ["WhatsApp:PhoneNumberId"] = NumeroId }, new HashSet<string>());
             Resultados.Add(("El sistema ahora envía desde este número.", true));
             await EjecutarAsync("App suscrita a la cuenta de WhatsApp (para recibir respuestas).", configurador.SuscribirAppAsync);

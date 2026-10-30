@@ -97,6 +97,11 @@
                 <input asp-for="Pin" class="form-control" maxlength="6" inputmode="numeric" placeholder="PIN de 6 dígitos" />
                 <button class="btn btn-primary text-nowrap" @(Model.DatosBasicos ? "" : "disabled")>Registrar número</button>
             </div>
+            @if (!string.IsNullOrEmpty(Model.PinGuardado))
+            {
+                <details class="small mt-2"><summary>PIN guardado del número (verificación en dos pasos)</summary>
+                    <span class="font-monospace fs-5">@Model.PinGuardado</span> · no lo comparta; WhatsApp lo pide si alguien intenta registrar el número en otro equipo.</details>
+            }
         </form>
     </div>
     <div class="col-lg-7">

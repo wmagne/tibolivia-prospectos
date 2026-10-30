@@ -103,6 +103,32 @@ if (args.Contains("--reporte-html"))
     return;
 }
 
+// Completa la conexión del número real: registro con PIN (generado y guardado cifrado) y webhook.
+if (args.Contains("--meta-completar"))
+{
+    using var scope = app.Services.CreateScope();
+    var sp = scope.ServiceProvider;
+    var ajustes = sp.GetRequiredService<AjustesGuardados>();
+    var configurador = sp.GetRequiredService<ConfiguradorMeta>();
+    var url = sp.GetRequiredService<IOptions<CampanasOptions>>().Value.UrlPublica.TrimEnd('/') + "/webhooks/whatsapp";
+    async Task Paso(string nombre, Func<Task> accion)
+    {
+        try { await accion(); Console.WriteLine($"OK  {nombre}"); }
+        catch (Exception ex) { Console.WriteLine($"ERR {nombre}: {ex.Message}"); }
+    }
+    var pin = ajustes.Obtener(ConfiguradorMeta.ClavePin);
+    if (string.IsNullOrEmpty(pin))
+    {
+        pin = System.Security.Cryptography.RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+        await ajustes.GuardarAsync(new Dictionary<string, string?> { [ConfiguradorMeta.ClavePin] = pin }, new HashSet<string> { ConfiguradorMeta.ClavePin });
+        Console.WriteLine("PIN de verificación en dos pasos generado y guardado cifrado (visible en Configuración → Asistente Meta).");
+    }
+    await Paso("Registrar el número en la API (PIN guardado)", () => configurador.RegistrarNumeroAsync(pin, CancellationToken.None));
+    await Paso("Suscribir la app a la cuenta de WhatsApp", () => configurador.SuscribirAppAsync(CancellationToken.None));
+    await Paso($"Conectar el webhook ({url})", () => configurador.ConfigurarWebhookAsync(url, CancellationToken.None));
+    return;
+}
+
 // Consulta de solo lectura para el diagnóstico del servidor: estado del número y de las plantillas en Meta.
 if (args.Contains("--plantillas-meta"))
 {

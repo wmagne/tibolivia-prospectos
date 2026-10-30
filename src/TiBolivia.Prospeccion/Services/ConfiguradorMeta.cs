@@ -18,6 +18,9 @@ public partial class ConfiguradorMeta(HttpClient http, IOptionsSnapshot<WhatsApp
     private WhatsAppOptions O => opciones.Value;
 
     /// <summary>Registra el número en la Cloud API. El PIN de 6 dígitos queda como verificación en dos pasos: anótelo.</summary>
+    /// <summary>Ajuste (cifrado) donde se guarda el PIN de verificación en dos pasos del número.</summary>
+    public const string ClavePin = "WhatsApp:PinRegistro";
+
     public Task RegistrarNumeroAsync(string pin, CancellationToken ct, string? phoneNumberId = null) =>
         PostAsync(O.Url($"{phoneNumberId ?? O.PhoneNumberId}/register"), new { messaging_product = "whatsapp", pin }, ct);
 
