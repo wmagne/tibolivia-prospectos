@@ -160,7 +160,11 @@ public static class WhatsAppWebhook
             new ContextoChatbot(prospecto.Id, prospecto.Empresa, prospecto.NombreContacto, campana?.Nombre,
                 campana?.Servicio?.Nombre, prospecto.AsignadoA?.NombreCompleto)), ct);
 
-        if (respuesta is null) return;
+        if (respuesta is null)
+        {
+            await BienvenidaAsync(db, sp, whatsApp, prospecto, texto, ct);
+            return;
+        }
         if (respuesta.DerivarAHumano)
         {
             prospecto.Interacciones.Add(new Interaccion
@@ -173,6 +177,23 @@ public static class WhatsAppWebhook
         if (!string.IsNullOrWhiteSpace(respuesta.Respuesta))
             await ResponderAsync(db, whatsApp, prospecto, respuesta.Respuesta, ct);
         log.LogInformation("Mensaje de {Telefono} atendido por el chatbot", telefono);
+    }
+
+    /// <summary>
+    /// Sin chatbot: responde una bienvenida (una vez por conversación de 24 h) y deja una tarea para que el comercial conteste.
+    /// </summary>
+    private static async Task BienvenidaAsync(AppDbContext db, IServiceProvider sp, IEnviadorWhatsApp whatsApp, Prospecto p, string texto, CancellationToken ct)
+    {
+        var desde = DateTime.UtcNow.AddHours(-24);
+        var yaConversando = await db.Mensajes.AnyAsync(m => m.ProspectoId == p.Id && m.Canal == Canal.WhatsApp
+            && m.Direccion == DireccionMensaje.Saliente && m.CreadoEn > desde, ct);
+        p.ProximaAccion = $"Responder WhatsApp de {(p.Empresa == "(sin empresa)" ? "+" + p.Telefono : p.Empresa)}";
+        p.FechaProximaAccion = DateTime.UtcNow;
+        p.Interacciones.Add(new Interaccion { Tipo = TipoInteraccion.WhatsApp, Detalle = "Escribió por WhatsApp: " + texto });
+        await db.SaveChangesAsync(ct);
+        if (yaConversando) return;
+        var bienvenida = sp.GetRequiredService<IOptionsSnapshot<WhatsAppOptions>>().Value.MensajeBienvenida;
+        if (!string.IsNullOrWhiteSpace(bienvenida)) await ResponderAsync(db, whatsApp, p, bienvenida, ct);
     }
 
     private static async Task ResponderAsync(AppDbContext db, IEnviadorWhatsApp whatsApp, Prospecto p, string texto, CancellationToken ct)

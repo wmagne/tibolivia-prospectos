@@ -177,6 +177,7 @@ public static class PaqueteCampanas
         await PublicidadPorRubroAsync(db, software);
         await TelefonoPorRubroAsync(db, software);
         await PlanNegocioAsync(db);
+        await WhatsAppConPermisoAsync(db, software);
         await db.SaveChangesAsync();
     }
 
@@ -451,6 +452,25 @@ public static class PaqueteCampanas
                     en el horario que les acomode. Si no es el momento, me lo indican y no les vuelvo a escribir.</p>
                     {{BotonesContacto}}
                     """ + firma)),
+            ], activa: true);
+    }
+
+    /// <summary>
+    /// WhatsApp automático por la API oficial, solo para prospectos que dieron su permiso (escribieron al número de la empresa).
+    /// Usa la plantilla aprobada por Meta "seguimiento_propuesta".
+    /// </summary>
+    private static async Task WhatsAppConPermisoAsync(AppDbContext db, Servicio software)
+    {
+        await CampanaAsync(db, "WhatsApp automático (clientes con permiso)",
+            "Seguimiento por la API oficial de WhatsApp (+591 64609998) a quienes escribieron o aceptaron recibir mensajes, si pasaron 3 días sin conversación. Plantilla aprobada por Meta.",
+            software,
+            [
+                new(0, await WhatsAppAsync(db, "WhatsApp automático 1 · Seguimiento (plantilla aprobada)",
+                    "Hola {{Nombre}}, le escribimos de TI Bolivia. Le enviamos un correo sobre {{Servicio}} para {{Empresa}}. ¿Tiene alguna consulta?",
+                    "seguimiento_propuesta", "{{Nombre}},{{Servicio}},{{Empresa}}")),
+                new(4, await TareaAsync(db, "WhatsApp automático 2 · Llamada si no respondió (tarea)",
+                    "Llamar a {{Empresa}} (no respondió el WhatsApp)",
+                    "Le escribimos por WhatsApp y no respondió. Llame y ofrezca el diagnóstico gratuito de 30 minutos ({{Necesidad}}).")),
             ], activa: true);
     }
 

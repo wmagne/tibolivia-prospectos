@@ -67,6 +67,15 @@ public class InscripcionAutomatica(AppDbContext db, ServicioInscripciones inscri
     /// <summary>Prospectos que todavía no se trabajaron por este canal y no están en otra campaña en curso.</summary>
     private IQueryable<Prospecto> Candidatos(string destino, int campanaId)
     {
+        if (destino.Equals("WhatsAppConPermiso", StringComparison.OrdinalIgnoreCase))
+        {
+            // Solo quienes dieron su permiso (escribieron al número o lo aceptaron): regla de Meta para mensajes iniciados por la empresa.
+            var hace3Dias = tiempo.GetUtcNow().UtcDateTime.AddDays(-3);
+            return db.Prospectos.Where(p => p.ConsentimientoWhatsApp && !p.BajaWhatsApp && p.Telefono != null && p.Empresa != "(sin empresa)"
+                && (p.Estado == EstadoProspecto.Nuevo || p.Estado == EstadoProspecto.Contactado || p.Estado == EstadoProspecto.Interesado)
+                && (p.UltimaRespuestaEn == null || p.UltimaRespuestaEn < hace3Dias)
+                && !p.Inscripciones.Any(i => i.Estado == EstadoInscripcion.Activa || i.CampanaId == campanaId));
+        }
         if (destino.Equals("Cualquiera", StringComparison.OrdinalIgnoreCase))
             return db.Prospectos.Where(p => ((p.Email != null && p.Email != "" && !p.BajaEmail) || p.Telefono != null)
                 && p.Estado == EstadoProspecto.Nuevo

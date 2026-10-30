@@ -76,6 +76,11 @@ public class WhatsAppOptions
     public string? AppSecret { get; set; }
     /// <summary>Política de Meta: solo escribir a quien dio su consentimiento (opt-in).</summary>
     public bool RequerirConsentimiento { get; set; } = true;
+    /// <summary>Número de WhatsApp de la empresa (con código de país) al que llevan los botones de los correos.
+    /// Quien escribe ahí da su permiso (opt-in) y entra a la conversación del sistema.</summary>
+    public string? NumeroPublico { get; set; }
+    /// <summary>Mensaje automático para quien escribe por primera vez (o tras 24 h sin conversación) si no hay chatbot.</summary>
+    public string? MensajeBienvenida { get; set; }
     public bool Simulacion => EsMeta
         ? string.IsNullOrWhiteSpace(AccessToken) || string.IsNullOrWhiteSpace(PhoneNumberId)
         : string.IsNullOrWhiteSpace(TextMeBot.ApiKey);

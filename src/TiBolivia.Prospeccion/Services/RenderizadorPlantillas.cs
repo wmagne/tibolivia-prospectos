@@ -6,7 +6,7 @@ using TiBolivia.Prospeccion.Domain;
 namespace TiBolivia.Prospeccion.Services;
 
 /// <summary>Reemplaza variables {{Nombre}}, {{Empresa}}, etc. en asuntos y cuerpos.</summary>
-public partial class RenderizadorPlantillas(IOptions<CampanasOptions> opciones, IOptions<SmtpOptions> smtp)
+public partial class RenderizadorPlantillas(IOptions<CampanasOptions> opciones, IOptions<SmtpOptions> smtp, IOptionsMonitor<WhatsAppOptions> whatsApp)
 {
     public static readonly string[] Variables =
         ["Nombre", "Contacto", "Empresa", "Cargo", "Ciudad", "Rubro", "Necesidad", "Servicio", "DescripcionServicio",
@@ -70,7 +70,8 @@ public partial class RenderizadorPlantillas(IOptions<CampanasOptions> opciones, 
         var asunto = Uri.EscapeDataString($"Diagnóstico gratuito - {p.Empresa}");
         var b = $"<a href=\"mailto:{correo}?subject={asunto}\" style=\"display:inline-block;background:#1565c0;color:#ffffff;text-decoration:none;" +
                 "font-weight:bold;padding:12px 20px;border-radius:8px;margin:4px 8px 4px 0;\">Quiero mi diagnóstico gratuito</a>";
-        var telefono = Telefonos.Normalizar(p.AsignadoA?.PhoneNumber);
+        // Preferimos el WhatsApp oficial de la empresa: quien escribe da su permiso y la conversación entra al sistema.
+        var telefono = Telefonos.Normalizar(whatsApp.CurrentValue.NumeroPublico) ?? Telefonos.Normalizar(p.AsignadoA?.PhoneNumber);
         if (telefono is not null)
         {
             var texto = Uri.EscapeDataString($"Hola, soy de {p.Empresa}. Me interesa el diagnóstico gratuito de TIBolivia.");
