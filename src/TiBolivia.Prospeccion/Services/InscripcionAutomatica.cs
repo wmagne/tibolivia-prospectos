@@ -47,12 +47,14 @@ public class InscripcionAutomatica(AppDbContext db, ServicioInscripciones inscri
         var q = Candidatos(o.Destino, campana.Id);
         if (!string.IsNullOrWhiteSpace(o.Rubro)) q = q.Where(p => p.Rubro != null && p.Rubro.StartsWith(o.Rubro));
         if (!string.IsNullOrWhiteSpace(o.Origen)) q = q.Where(p => p.Origen != null && p.Origen.StartsWith(o.Origen));
+        if (!string.IsNullOrWhiteSpace(o.Contiene)) q = q.Where(ContieneAlguna(o.Contiene));
         if (!o.EsEspecifica)
             foreach (var e in especificas)
             {
                 // Lo que reclama una campaña específica no se manda a las generales.
                 if (!string.IsNullOrWhiteSpace(e.Rubro)) { var r = e.Rubro; q = q.Where(p => p.Rubro == null || !p.Rubro.StartsWith(r)); }
                 if (!string.IsNullOrWhiteSpace(e.Origen)) { var or = e.Origen; q = q.Where(p => p.Origen == null || !p.Origen.StartsWith(or)); }
+                if (!string.IsNullOrWhiteSpace(e.Contiene)) q = q.Where(Negar(ContieneAlguna(e.Contiene)));
             }
         var ids = await q
             .OrderBy(p => p.Prioridad ?? "Z").ThenBy(p => p.DatosPorVerificar).ThenBy(p => p.Id)
@@ -91,6 +93,19 @@ public class InscripcionAutomatica(AppDbContext db, ServicioInscripciones inscri
         return destino.Equals("Celular", StringComparison.OrdinalIgnoreCase)
             ? q.Where(celular).Where(p => !p.BajaWhatsApp)
             : q.Where(Negar(celular));
+    }
+
+    /// <summary>Nombre, necesidad o notas del prospecto contienen alguna de las palabras (separadas por "|"), sin distinguir mayúsculas.</summary>
+    private static Expression<Func<Prospecto, bool>> ContieneAlguna(string palabras)
+    {
+        Expression<Func<Prospecto, string>> texto = p => (p.Empresa + " " + (p.Necesidad ?? "") + " " + (p.Notas ?? "")).ToLower();
+        Expression? cuerpo = null;
+        foreach (var palabra in palabras.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var contiene = Expression.Call(texto.Body, nameof(string.Contains), null, Expression.Constant(palabra.ToLowerInvariant()));
+            cuerpo = cuerpo is null ? contiene : Expression.OrElse(cuerpo, contiene);
+        }
+        return Expression.Lambda<Func<Prospecto, bool>>(cuerpo ?? Expression.Constant(false), texto.Parameters);
     }
 
     private static Expression<Func<T, bool>> Negar<T>(Expression<Func<T, bool>> e) =>

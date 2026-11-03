@@ -126,7 +126,10 @@ public class AutoInscripcionOptions
     public string? Rubro { get; set; }
     /// <summary>Opcional: solo prospectos cuyo origen empieza con este texto (p. ej. "Lista: 07-plan").</summary>
     public string? Origen { get; set; }
-    public bool EsEspecifica => !string.IsNullOrWhiteSpace(Rubro) || !string.IsNullOrWhiteSpace(Origen);
+    /// <summary>Opcional: palabras separadas por "|"; el prospecto entra si su nombre, necesidad o notas contienen alguna
+    /// (p. ej. "hotel|hostal|residencial").</summary>
+    public string? Contiene { get; set; }
+    public bool EsEspecifica => !string.IsNullOrWhiteSpace(Rubro) || !string.IsNullOrWhiteSpace(Origen) || !string.IsNullOrWhiteSpace(Contiene);
 }
 
 public record ResultadoEnvio(bool Exito, string? ProveedorId, string? Error)

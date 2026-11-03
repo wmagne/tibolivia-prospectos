@@ -178,6 +178,7 @@ public static class PaqueteCampanas
         await TelefonoPorRubroAsync(db, software);
         await PlanNegocioAsync(db);
         await WhatsAppConPermisoAsync(db, software);
+        await CampanasPorRubroNuevoAsync(db);
         await db.SaveChangesAsync();
     }
 
@@ -471,6 +472,122 @@ public static class PaqueteCampanas
                 new(4, await TareaAsync(db, "WhatsApp automático 2 · Llamada si no respondió (tarea)",
                     "Llamar a {{Empresa}} (no respondió el WhatsApp)",
                     "Le escribimos por WhatsApp y no respondió. Llame y ofrezca el diagnóstico gratuito de 30 minutos ({{Necesidad}}).")),
+            ], activa: true);
+    }
+
+    /// <summary>
+    /// Ofertas por rubro surgidas de la búsqueda diaria de oportunidades: planillas para estudios contables,
+    /// sistema para hoteles y cobro de pensiones con QR para colegios. Correo + WhatsApp (tarea) + seguimiento + llamada.
+    /// </summary>
+    private static async Task CampanasPorRubroNuevoAsync(AppDbContext db)
+    {
+        const string firma = "<p style=\"margin-top:20px;\">Saludos cordiales,<br><b>{{Comercial}}</b> · TIBolivia<br>{{EmailComercial}} · {{TelefonoComercial}}</p>";
+        const string titulo = "<h2 style=\"color:#0d47a1;font-size:22px;margin:0 0 16px;\">";
+
+        var planillas = await ServicioAsync(db, "Sistema de planillas de sueldos",
+            "Planillas multiempresa: sueldos, aportes, RC-IVA, archivos para la OVT del Ministerio de Trabajo, aguinaldo, finiquitos y boletas digitales.");
+        await CampanaAsync(db, "Estudios contables: sistema de planillas y aguinaldo",
+            "Para estudios contables y empresas empleadoras. Correo, WhatsApp (tarea), seguimiento a los 3 días y llamada a los 5.",
+            planillas,
+            [
+                new(0, await CorreoAsync(db, "Planillas 1 · Presentación",
+                    "{{Empresa}}: planillas, aportes y aguinaldo sin errores",
+                    titulo + "Planillas de todos sus clientes en minutos</h2>" + """
+                    <p>Estimados de {{Empresa}}:</p>
+                    <p>Soy {{Comercial}}, de <b>TIBolivia</b>. Desarrollamos un sistema de <b>planillas de sueldos multiempresa</b> pensado para estudios contables y empresas empleadoras:</p>
+                    <ul>
+                      <li>Sueldos, aportes y RC-IVA calculados automáticamente.</li>
+                      <li>Archivos listos para presentar en la <b>OVT del Ministerio de Trabajo</b>.</li>
+                      <li><b>Aguinaldo</b>, finiquitos y boletas de pago digitales.</li>
+                      <li>Alertas de vencimientos para que ningún cliente pague multas o intereses.</li>
+                    </ul>
+                    <p style="background:#e8f1fb;border-left:4px solid #1565c0;padding:12px 16px;border-radius:4px;">Se acerca el aguinaldo: le mostramos el sistema en <b>15 minutos</b> y lo probamos con uno de sus clientes, sin costo.</p>
+                    {{BotonesContacto}}
+                    """ + firma)),
+                new(0, await TareaAsync(db, "Planillas 2 · WhatsApp de presentación (tarea)",
+                    "Enviar WhatsApp a {{Empresa}} (sistema de planillas)",
+                    "Buenos días, le saluda {{Comercial}} de TIBolivia. Ayudamos a estudios contables a preparar planillas de sueldos, aportes, archivos para la OVT y el aguinaldo en minutos, para todos sus clientes. ¿Le muestro una demo de 15 minutos esta semana?")),
+                new(3, await CorreoAsync(db, "Planillas 3 · Seguimiento",
+                    "Re: {{Empresa}}: planillas, aportes y aguinaldo sin errores",
+                    """
+                    <p>Estimados de {{Empresa}}:</p>
+                    <p>Les escribo para retomar mi correo sobre el sistema de planillas. Antes del cierre de año es cuando más tiempo ahorra: aguinaldo, planillas trimestrales y finiquitos.
+                    Si les interesa, coordinamos 15 minutos; si no es el momento, me lo indican y no les vuelvo a escribir.</p>
+                    {{BotonesContacto}}
+                    """ + firma)),
+                new(2, await TareaAsync(db, "Planillas 4 · Llamada (tarea)",
+                    "Llamar a {{Empresa}} por el sistema de planillas",
+                    "Guion: \"Buenos días, soy {{Comercial}} de TIBolivia. Les escribimos sobre un sistema para preparar planillas, aportes y aguinaldo de todos sus clientes. ¿Con quién puedo coordinar una demo de 15 minutos?\"")),
+            ], activa: true);
+
+        var hotel = await ServicioAsync(db, "Sistema para hoteles y hostales",
+            "Sistema hotelero en la nube: registro de huéspedes con una sola carga para los reportes a Migración e Impuestos, reservas directas con confirmación por WhatsApp, cobro con QR y reportes de ocupación.");
+        await CampanaAsync(db, "Hoteles y hostales: sistema hotelero en la nube",
+            "Para hoteles pequeños, hostales, residenciales y apart hoteles. Correo, WhatsApp (tarea), seguimiento a los 4 días y llamada a los 6.",
+            hotel,
+            [
+                new(0, await CorreoAsync(db, "Hoteles 1 · Presentación",
+                    "{{Empresa}}: registro de huéspedes y reservas directas en un solo sistema",
+                    titulo + "Menos papeleo en recepción, más reservas directas</h2>" + """
+                    <p>Estimados de {{Empresa}}:</p>
+                    <p>Soy {{Comercial}}, de <b>TIBolivia</b>. Tenemos un <b>sistema hotelero en la nube</b> para hoteles pequeños y hostales:</p>
+                    <ul>
+                      <li><b>Check-in con una sola carga</b> de los datos del huésped, que sirve para los reportes que piden Migración e Impuestos.</li>
+                      <li><b>Reservas directas</b> desde su web o redes, con confirmación por WhatsApp (sin pagar comisiones).</li>
+                      <li><b>Cobro con QR</b>, control de habitaciones y reportes de ocupación.</li>
+                    </ul>
+                    <p style="background:#e8f1fb;border-left:4px solid #1565c0;padding:12px 16px;border-radius:4px;">Le ofrecemos un <b>piloto gratuito de 60 días</b>. ¿Le muestro el sistema en 20 minutos?</p>
+                    {{BotonesContacto}}
+                    """ + firma)),
+                new(0, await TareaAsync(db, "Hoteles 2 · WhatsApp de presentación (tarea)",
+                    "Enviar WhatsApp a {{Empresa}} (sistema hotelero)",
+                    "Buenos días, le saluda {{Comercial}} de TIBolivia. Tenemos un sistema en la nube para hoteles y hostales: check-in con una sola carga para los reportes de Migración e Impuestos, reservas directas por WhatsApp y cobro con QR. Estamos ofreciendo un piloto gratis de 60 días. ¿Le muestro cómo funciona en 20 minutos?")),
+                new(4, await CorreoAsync(db, "Hoteles 3 · Seguimiento",
+                    "Re: {{Empresa}}: registro de huéspedes y reservas directas",
+                    """
+                    <p>Estimados de {{Empresa}}:</p>
+                    <p>Les escribo para retomar mi correo sobre el piloto gratuito del sistema hotelero. En temporada alta es cuando más se nota: menos tiempo en recepción y más reservas sin comisiones.
+                    Si les interesa, coordinamos 20 minutos; si no es el momento, me lo indican y no les vuelvo a escribir.</p>
+                    {{BotonesContacto}}
+                    """ + firma)),
+                new(2, await TareaAsync(db, "Hoteles 4 · Llamada (tarea)",
+                    "Llamar a {{Empresa}} por el sistema hotelero",
+                    "Guion: \"Buenos días, soy {{Comercial}} de TIBolivia. Les escribimos sobre un sistema para el registro de huéspedes, reservas directas y cobro con QR, con 60 días de prueba gratis. ¿Con quién puedo coordinar una demo de 20 minutos?\"")),
+            ], activa: true);
+
+        var colegios = await ServicioAsync(db, "Cobro de pensiones con QR para colegios",
+            "Cada cuota con su QR de pago, registro automático del pago, factura electrónica, recordatorios de mora a los padres por WhatsApp y reportes para la dirección.");
+        await CampanaAsync(db, "Colegios: cobro de pensiones con QR y factura automática",
+            "Para colegios privados, institutos y academias. Correo, WhatsApp (tarea), seguimiento a los 4 días y llamada a los 6.",
+            colegios,
+            [
+                new(0, await CorreoAsync(db, "Colegios 1 · Presentación",
+                    "{{Empresa}}: cobro de pensiones con QR y factura automática",
+                    titulo + "Pensiones al día, sin filas ni planillas en Excel</h2>" + """
+                    <p>Estimados de {{Empresa}}:</p>
+                    <p>Soy {{Comercial}}, de <b>TIBolivia</b>. Desarrollamos un sistema para que los colegios cobren las pensiones de forma simple:</p>
+                    <ul>
+                      <li>Cada cuota con su <b>QR de pago</b>: los padres pagan desde su banca móvil.</li>
+                      <li>El pago se registra solo y se emite la <b>factura electrónica</b>.</li>
+                      <li><b>Recordatorios por WhatsApp</b> a las familias con cuotas pendientes y reportes de mora para la dirección.</li>
+                    </ul>
+                    <p style="background:#e8f1fb;border-left:4px solid #1565c0;padding:12px 16px;border-radius:4px;">Le ofrecemos un <b>piloto de 2 meses sin costo</b> para empezar la gestión 2027 con el sistema funcionando.</p>
+                    {{BotonesContacto}}
+                    """ + firma)),
+                new(0, await TareaAsync(db, "Colegios 2 · WhatsApp de presentación (tarea)",
+                    "Enviar WhatsApp a {{Empresa}} (cobro de pensiones con QR)",
+                    "Buenos días, le saluda {{Comercial}} de TIBolivia. Ayudamos a colegios a cobrar las pensiones con QR: el pago se registra solo, se emite la factura y las familias reciben recordatorios por WhatsApp. Ofrecemos un piloto de 2 meses sin costo antes de las inscripciones 2027. ¿Le muestro cómo funciona?")),
+                new(4, await CorreoAsync(db, "Colegios 3 · Seguimiento",
+                    "Re: {{Empresa}}: cobro de pensiones con QR",
+                    """
+                    <p>Estimados de {{Empresa}}:</p>
+                    <p>Les escribo para retomar mi correo sobre el cobro de pensiones con QR. Implementarlo antes de las inscripciones permite empezar el año con todas las familias en el sistema.
+                    Si les interesa, coordinamos 20 minutos; si no es el momento, me lo indican y no les vuelvo a escribir.</p>
+                    {{BotonesContacto}}
+                    """ + firma)),
+                new(2, await TareaAsync(db, "Colegios 4 · Llamada (tarea)",
+                    "Llamar a {{Empresa}} por el cobro de pensiones con QR",
+                    "Guion: \"Buenos días, soy {{Comercial}} de TIBolivia. Les escribimos sobre un sistema de cobro de pensiones con QR y factura automática, con 2 meses de prueba sin costo. ¿Con quién de administración puedo coordinar una reunión de 20 minutos?\"")),
             ], activa: true);
     }
 
