@@ -55,6 +55,17 @@ public class ReporteDiario(AppDbContext db, IEnviadorEmail enviador, IOptions<Re
             Detenidas = c.Inscripciones.Count(i => i.Estado == EstadoInscripcion.Detenida),
         }).Where(c => c.EnCurso + c.Terminadas + c.Detenidas > 0).ToListAsync(ct);
 
+        var porCampanaHoy = await db.Mensajes.Where(m => m.CreadoEn >= desde && m.CreadoEn < hasta && m.Direccion == DireccionMensaje.Saliente
+                && m.Estado == EstadoMensaje.Enviado && m.Inscripcion != null)
+            .GroupBy(m => m.Inscripcion!.Campana.Nombre).Select(g => new { Campana = g.Key, Total = g.Count() })
+            .OrderByDescending(x => x.Total).ToListAsync(ct);
+
+        // Los que ya mostraron interés: son los negocios que se pueden cerrar esta semana.
+        var paraCerrar = await db.Prospectos
+            .Where(p => p.Estado == EstadoProspecto.Interesado || p.Estado == EstadoProspecto.ReunionAgendada || p.Estado == EstadoProspecto.PropuestaEnviada)
+            .OrderByDescending(p => p.UltimaRespuestaEn ?? p.CreadoEn).Take(20)
+            .Select(p => new { p.Id, p.Empresa, p.Estado, p.Telefono, p.Email, p.UltimaRespuestaEn, p.ProximaAccion }).ToListAsync(ct);
+
         var totalProspectos = await db.Prospectos.CountAsync(ct);
         var porEstado = await db.Prospectos.GroupBy(p => p.Estado).Select(g => new { Estado = g.Key, Total = g.Count() }).ToListAsync(ct);
 
@@ -87,6 +98,37 @@ public class ReporteDiario(AppDbContext db, IEnviadorEmail enviador, IOptions<Re
             sb.Append("<ul style=\"font-size:14px;padding-left:18px;\">");
             foreach (var r in respuestas) sb.Append($"<li><b>{E(r.Empresa)}</b> ({r.Canal}): {E(r.Asunto)}</li>");
             sb.Append("</ul>");
+        }
+
+        var url0 = campanas.Value.UrlPublica.TrimEnd('/');
+        Titulo($"Para cerrar negocios ({paraCerrar.Count})");
+        if (paraCerrar.Count == 0) sb.Append("<p style=\"font-size:14px;color:#6b7280;\">Todavía no hay empresas interesadas. Cuando alguien responda, aparecerá aquí con el paso siguiente.</p>");
+        else
+        {
+            sb.Append("<p style=\"font-size:13px;color:#6b7280;margin:0 0 6px;\">Llame hoy, confirme la demo y envíe la propuesta por escrito. Interesado → reunión → propuesta → ganado.</p>");
+            sb.Append(tabla);
+            foreach (var p in paraCerrar)
+            {
+                var siguiente = p.Estado switch
+                {
+                    EstadoProspecto.Interesado => "Llamar y agendar demo",
+                    EstadoProspecto.ReunionAgendada => "Hacer la demo y enviar propuesta",
+                    _ => "Llamar para cerrar la propuesta",
+                };
+                var contacto = string.Join(" · ", new[] { p.Telefono, p.Email }.Where(x => !string.IsNullOrWhiteSpace(x)));
+                sb.Append($"<tr><td style=\"padding:6px 12px;border-bottom:1px solid #e3e8f0;\"><a href=\"{url0}/Prospectos/Detalle/{p.Id}\" style=\"color:#0d47a1;font-weight:bold;\">{E(p.Empresa)}</a>" +
+                    $"<br><span style=\"font-size:12px;color:#6b7280;\">{E(Etiquetas.Texto(p.Estado))}{(p.UltimaRespuestaEn is { } r ? $" · respondió {Fechas.ABolivia(r):dd/MM}" : "")} · {E(contacto)}</span></td>" +
+                    $"<td style=\"padding:6px 12px;border-bottom:1px solid #e3e8f0;text-align:right;font-size:13px;\">{E(p.ProximaAccion ?? siguiente)}</td></tr>");
+            }
+            sb.Append("</table>");
+        }
+
+        if (porCampanaHoy.Count > 0)
+        {
+            Titulo("Enviados hoy por campaña");
+            sb.Append(tabla);
+            foreach (var c in porCampanaHoy) Fila(c.Campana, c.Total);
+            sb.Append("</table>");
         }
 
         Titulo("Empresas nuevas cargadas");

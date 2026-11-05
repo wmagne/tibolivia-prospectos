@@ -8,7 +8,7 @@ namespace TiBolivia.Prospeccion.Data;
 /// existen (se buscan por nombre), así que no pisan cambios hechos desde la interfaz.
 /// Las campañas se crean INACTIVAS: revise los textos y actívelas desde "Campañas".
 /// </summary>
-public static class PaqueteCampanas
+public static partial class PaqueteCampanas
 {
     private record PasoDef(int DiasEspera, Plantilla Plantilla);
 
@@ -179,6 +179,7 @@ public static class PaqueteCampanas
         await PlanNegocioAsync(db);
         await WhatsAppConPermisoAsync(db, software);
         await CampanasPorRubroNuevoAsync(db);
+        await ServiciosDelSitioWebAsync(db);
         await db.SaveChangesAsync();
     }
 

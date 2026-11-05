@@ -44,7 +44,8 @@ public class InscripcionAutomatica(AppDbContext db, ServicioInscripciones inscri
         var cupo = Math.Min(porHora - estaHora, o.MaximoPorDia - hoy);
         if (cupo <= 0) return 0;
 
-        var q = Candidatos(o.Destino, campana.Id);
+        var q = Candidatos(o, campana.Id);
+        if (o.ConSitioWeb) q = q.Where(p => p.SitioWeb != null && p.SitioWeb != "");
         if (!string.IsNullOrWhiteSpace(o.Rubro)) q = q.Where(p => p.Rubro != null && p.Rubro.StartsWith(o.Rubro));
         if (!string.IsNullOrWhiteSpace(o.Origen)) q = q.Where(p => p.Origen != null && p.Origen.StartsWith(o.Origen));
         if (!string.IsNullOrWhiteSpace(o.Contiene)) q = q.Where(ContieneAlguna(o.Contiene));
@@ -67,8 +68,18 @@ public class InscripcionAutomatica(AppDbContext db, ServicioInscripciones inscri
     }
 
     /// <summary>Prospectos que todavía no se trabajaron por este canal y no están en otra campaña en curso.</summary>
-    private IQueryable<Prospecto> Candidatos(string destino, int campanaId)
+    private IQueryable<Prospecto> Candidatos(AutoInscripcionOptions o, int campanaId)
     {
+        var destino = o.Destino;
+        if (destino.Equals("Recontactar", StringComparison.OrdinalIgnoreCase))
+        {
+            // Ya pasaron por una campaña completa y no contestaron: se les ofrece lo nuevo una sola vez.
+            var limite = tiempo.GetUtcNow().UtcDateTime.AddDays(-Math.Max(7, o.DiasDesdeUltimaCampana));
+            return db.Prospectos.Where(p => p.Email != null && p.Email != "" && !p.BajaEmail
+                && p.Estado == EstadoProspecto.Contactado && p.UltimaRespuestaEn == null
+                && p.Inscripciones.Any() && p.Inscripciones.All(i => i.Estado != EstadoInscripcion.Activa && i.CreadoEn < limite)
+                && !p.Inscripciones.Any(i => i.CampanaId == campanaId));
+        }
         if (destino.Equals("WhatsAppConPermiso", StringComparison.OrdinalIgnoreCase))
         {
             // Solo quienes dieron su permiso (escribieron al número o lo aceptaron): regla de Meta para mensajes iniciados por la empresa.

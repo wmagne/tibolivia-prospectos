@@ -120,7 +120,8 @@ public class AutoInscripcionOptions
     public string Campana { get; set; } = "Publicidad por rubro (correo)";
     public int MaximoPorDia { get; set; } = 200;
     /// <summary>A quién inscribe: "Correo" (con correo válido), "Celular" (sin correo, con celular), "Fijo" (sin correo, solo teléfono fijo)
-    /// o "Cualquiera" (prospecto nuevo con correo o teléfono; la campaña mezcla canales).</summary>
+    /// "Cualquiera" (prospecto nuevo con correo o teléfono; la campaña mezcla canales) o "Recontactar" (con correo, ya recibió
+    /// campañas hace más de DiasDesdeUltimaCampana días, nunca respondió y no está en ninguna en curso).</summary>
     public string Destino { get; set; } = "Correo";
     /// <summary>Opcional: solo prospectos cuyo rubro empieza con este texto (p. ej. "Salud").</summary>
     public string? Rubro { get; set; }
@@ -129,7 +130,11 @@ public class AutoInscripcionOptions
     /// <summary>Opcional: palabras separadas por "|"; el prospecto entra si su nombre, necesidad o notas contienen alguna
     /// (p. ej. "hotel|hostal|residencial").</summary>
     public string? Contiene { get; set; }
-    public bool EsEspecifica => !string.IsNullOrWhiteSpace(Rubro) || !string.IsNullOrWhiteSpace(Origen) || !string.IsNullOrWhiteSpace(Contiene);
+    /// <summary>Opcional: solo prospectos con sitio web propio (p. ej. para ofrecer el asistente con IA para la web).</summary>
+    public bool ConSitioWeb { get; set; }
+    /// <summary>Para Destino "Recontactar": días desde que entró a su última campaña sin responder.</summary>
+    public int DiasDesdeUltimaCampana { get; set; } = 30;
+    public bool EsEspecifica => !string.IsNullOrWhiteSpace(Rubro) || !string.IsNullOrWhiteSpace(Origen) || !string.IsNullOrWhiteSpace(Contiene) || ConSitioWeb;
 }
 
 public record ResultadoEnvio(bool Exito, string? ProveedorId, string? Error)

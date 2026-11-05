@@ -10,26 +10,34 @@ Trabaje en una carpeta temporal (TMP) fuera del repositorio para los CSV interme
 
 1. Actualizar el repositorio (rama de trabajo) y fusionar main si hiciera falta.
 2. `python3 -I tools/prospeccion/existentes.py src/TiBolivia.Prospeccion/Data/Listas TMP/existentes.txt`
-3. Leer `tools/prospeccion/estado.txt` (índice N) y tomar 6 segmentos de `segmentos.txt` (líneas sin #) desde N, en forma circular.
-4. Lanzar 6 subagentes en paralelo (uno por segmento). Prompt de cada uno: "Lee y sigue tools/prospeccion/BRIEF.md
+3. Leer `tools/prospeccion/estado.txt` (índice N) y tomar 8 segmentos de `segmentos.txt` (líneas sin #) desde N, en forma circular.
+4. Lanzar 8 subagentes en paralelo (uno por segmento). Prompt de cada uno: "Lee y sigue tools/prospeccion/BRIEF.md
    (ruta absoluta del repositorio). El archivo existentes.txt está en TMP/existentes.txt. TU SEGMENTO: <segmento>.
-   Archivo de salida: TMP/ronda/NN.csv". Presupuesto: 30 búsquedas por agente (el límite de 200 es compartido).
-4b. Lanzar además 1 subagente de OPORTUNIDADES (máximo 15 búsquedas): "Investiga UN rubro u oportunidad nueva para
+   Archivo de salida: TMP/ronda/NN.csv". Presupuesto: 22 búsquedas por agente (el límite de 200 es compartido). Meta del día: unas 300 empresas nuevas; los mensajes diarios salen de las campañas sobre toda la base.
+4b. Lanzar además 1 subagente de OPORTUNIDADES (máximo 12 búsquedas): "Investiga UN rubro u oportunidad nueva para
    TIBolivia (empresa cruceña de software, apps, CRM, facturación SIAT, correo corporativo, salud digital y formación
    digital) que todavía no esté en docs/OPORTUNIDADES.md: un sector de Bolivia que esté digitalizándose, una norma
    nueva que obligue a usar sistemas, un nicho desatendido, licitaciones o programas de apoyo. Devuelve: rubro, por qué
    ahora (con dato concreto), qué vender, a qué clientes, primer paso y URL de la fuente. No inventes datos."
    Agregue la fila arriba de la tabla de docs/OPORTUNIDADES.md y una línea nueva al final de segmentos.txt con
    "Ciudad/es — <clientes de ese rubro> (contacto publicado)" para que la búsqueda de los próximos días traiga clientes.
+4c. SERVICIOS NUEVOS: `git -C /home/user/tiboliviaweb pull` (si no está, add_repo wmagne/TIBoliviaWeb y clonarlo).
+   Comparar los productos de `sitio/` y `contacto/ficha_ventas.md` con `tools/prospeccion/SERVICIOS-WEB.md`.
+   Si hay un producto o servicio nuevo (o cambió un precio), crear su campaña en `Data/PaqueteCampanasWeb.cs`
+   (activa, con enlace a su página), su regla en `appsettings.json` antes de las reglas generales, y la fila en
+   SERVICIOS-WEB.md; actualizar la fecha de revisión. Si no hay cambios, solo actualizar la fecha.
 5. Unir: `python3 -I tools/prospeccion/unir.py TMP/ronda TMP/unido.csv TMP/existentes.txt`
    Si salieron 0 filas, no publicar; solo avanzar estado.txt.
 6. Copiar a `src/TiBolivia.Prospeccion/Data/Listas/web-diaria-AAAA-MM-DD.csv` (el sistema la carga sola al reiniciar, una sola vez).
-7. Guardar en estado.txt el nuevo índice (N+6, circular). `dotnet build -c Release` debe compilar.
+7. Guardar en estado.txt el nuevo índice (N+8, circular). `dotnet build -c Release` debe compilar.
 8. Commit ("Búsqueda diaria de prospectos AAAA-MM-DD: N empresas") con los trailers de atribución de la sesión,
    push a la rama de trabajo y a main.
 9. Publicar: el push a main de un archivo en Data/Listas lanza solo el workflow `desplegar.yml` (instalar).
    Si tiene herramientas de GitHub (mcp__github__), espere a que termine bien.
 10. Si puede, verificar con accion=diagnostico (sección "Prospectos por origen" debe mostrar la lista nueva).
+10b. CERRAR NEGOCIOS: en el diagnóstico, revisar "Respuestas de prospectos" y "Prospectos por estado". Para cada
+    respuesta real (no rebotes ni respuestas automáticas) preparar en el informe el paso siguiente y un borrador de respuesta
+    para que el comercial lo envíe. No se responde a ninguna empresa desde aquí.
 11. Informar en español: empresas nuevas, cuántas con correo/celular/fijo, rubros y ciudades, la oportunidad del día
     (rubro, por qué ahora, qué vender y fuente) y el estado de las campañas.
 
