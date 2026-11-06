@@ -156,7 +156,8 @@ public class MotorCampanas(
 
         if (!p.PuedeRecibirWhatsApp)
             return Omitir(mensaje, p.BajaWhatsApp ? "El prospecto se dio de baja de WhatsApp" : "Sin número de WhatsApp");
-        if (whatsAppOpciones.Value.RequerirConsentimiento && !p.ConsentimientoWhatsApp)
+        if (whatsAppOpciones.Value.RequerirConsentimiento && !p.ConsentimientoWhatsApp
+            && !whatsAppOpciones.Value.CampanasSinConsentimiento.Contains(i.Campana.Nombre))
             return Omitir(mensaje, "Sin consentimiento (opt-in) para WhatsApp");
 
         ResultadoEnvio r;

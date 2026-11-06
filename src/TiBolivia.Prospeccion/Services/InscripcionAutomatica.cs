@@ -12,8 +12,13 @@ namespace TiBolivia.Prospeccion.Services;
 /// Se detiene sola si la campaña se desactiva.
 /// </summary>
 public class InscripcionAutomatica(AppDbContext db, ServicioInscripciones inscripciones, HorarioLaboral horario,
-    IOptions<CampanasOptions> opciones, TimeProvider tiempo, ILogger<InscripcionAutomatica> log)
+    IOptions<CampanasOptions> opciones, TimeProvider tiempo, IServiceProvider servicios, ILogger<InscripcionAutomatica> log)
 {
+    public const string CampanaManualWhatsApp = "WhatsApp por rubro (envío manual)";
+
+    // Estado de las plantillas en Meta, consultado como mucho cada 30 minutos (la inscripción corre cada minuto).
+    private static (DateTime Cuando, Dictionary<string, string> Estados)? cachePlantillas;
+
     public async Task<int> EjecutarAsync(CancellationToken ct)
     {
         var total = 0;
@@ -44,6 +49,8 @@ public class InscripcionAutomatica(AppDbContext db, ServicioInscripciones inscri
         var cupo = Math.Min(porHora - estaHora, o.MaximoPorDia - hoy);
         if (cupo <= 0) return 0;
 
+        if (o.Destino.Equals("WhatsAppApi", StringComparison.OrdinalIgnoreCase) && !await PlantillaAprobadaAsync(campana.Id, ct)) return 0;
+
         var q = Candidatos(o, campana.Id);
         if (o.ConSitioWeb) q = q.Where(p => p.SitioWeb != null && p.SitioWeb != "");
         if (!string.IsNullOrWhiteSpace(o.Rubro)) q = q.Where(p => p.Rubro != null && p.Rubro.StartsWith(o.Rubro));
@@ -62,6 +69,20 @@ public class InscripcionAutomatica(AppDbContext db, ServicioInscripciones inscri
             .Select(p => p.Id).Take(cupo).ToListAsync(ct);
         if (ids.Count == 0) return 0;
 
+        if (o.Destino.Equals("WhatsAppApi", StringComparison.OrdinalIgnoreCase))
+        {
+            // Pasan del WhatsApp manual (desde el celular) al envío automático: se cierra su tarea pendiente.
+            var manuales = await db.Inscripciones.Include(i => i.Prospecto)
+                .Where(i => ids.Contains(i.ProspectoId) && i.Estado == EstadoInscripcion.Activa && i.Campana.Nombre == CampanaManualWhatsApp).ToListAsync(ct);
+            foreach (var i in manuales)
+            {
+                i.Estado = EstadoInscripcion.Detenida;
+                i.ProximoEnvio = null;
+                if (i.Prospecto.ProximaAccion?.StartsWith("Enviar WhatsApp") == true) { i.Prospecto.ProximaAccion = null; i.Prospecto.FechaProximaAccion = null; }
+            }
+            await db.SaveChangesAsync(ct);
+        }
+
         var n = await inscripciones.InscribirAsync(campana.Id, ids, null, ct);
         log.LogInformation("Inscripción automática: {Cantidad} prospectos inscritos en \"{Campana}\"", n, campana.Nombre);
         return n;
@@ -71,6 +92,17 @@ public class InscripcionAutomatica(AppDbContext db, ServicioInscripciones inscri
     private IQueryable<Prospecto> Candidatos(AutoInscripcionOptions o, int campanaId)
     {
         var destino = o.Destino;
+        if (destino.Equals("WhatsAppApi", StringComparison.OrdinalIgnoreCase))
+        {
+            // Primer contacto por la API: celular válido, nunca respondió, sin otra campaña en curso (salvo el WhatsApp manual, que reemplaza)
+            // y sin haber recibido ya un mensaje por la API.
+            Expression<Func<Prospecto, bool>> movil = p => p.Telefono!.Length == 11 && (p.Telefono.StartsWith("5916") || p.Telefono.StartsWith("5917"));
+            return db.Prospectos.Where(p => p.Telefono != null && !p.BajaWhatsApp && p.Empresa != "(sin empresa)"
+                    && (p.Estado == EstadoProspecto.Nuevo || p.Estado == EstadoProspecto.Contactado) && p.UltimaRespuestaEn == null
+                    && !p.Inscripciones.Any(i => i.Campana.Nombre.StartsWith("WhatsApp API"))
+                    && !p.Inscripciones.Any(i => i.Estado == EstadoInscripcion.Activa && i.Campana.Nombre != CampanaManualWhatsApp))
+                .Where(movil);
+        }
         if (destino.Equals("Recontactar", StringComparison.OrdinalIgnoreCase))
         {
             // Ya pasaron por una campaña completa y no contestaron: se les ofrece lo nuevo una sola vez.
@@ -104,6 +136,29 @@ public class InscripcionAutomatica(AppDbContext db, ServicioInscripciones inscri
         return destino.Equals("Celular", StringComparison.OrdinalIgnoreCase)
             ? q.Where(celular).Where(p => !p.BajaWhatsApp)
             : q.Where(Negar(celular));
+    }
+
+    /// <summary>La campaña por la API solo arranca cuando Meta aprobó la plantilla de su primer paso (si no, cada envío fallaría).</summary>
+    private async Task<bool> PlantillaAprobadaAsync(int campanaId, CancellationToken ct)
+    {
+        var meta = await db.PasosCampana.Where(p => p.CampanaId == campanaId).OrderBy(p => p.Orden)
+            .Select(p => p.Plantilla.WhatsAppPlantillaMeta).FirstOrDefaultAsync(ct);
+        if (string.IsNullOrWhiteSpace(meta)) return false;
+        var ahora = tiempo.GetUtcNow().UtcDateTime;
+        if (cachePlantillas is not { } c || ahora - c.Cuando > TimeSpan.FromMinutes(30))
+        {
+            try
+            {
+                var lista = await servicios.GetRequiredService<DiagnosticoWhatsApp>().ListarPlantillasAsync(ct);
+                cachePlantillas = (ahora, lista.GroupBy(x => x.Nombre).ToDictionary(g => g.Key, g => g.First().Estado));
+            }
+            catch (Exception ex)
+            {
+                log.LogWarning("No se pudo consultar las plantillas en Meta: {Error}", ex.Message);
+                cachePlantillas = (ahora, cachePlantillas?.Estados ?? []);
+            }
+        }
+        return cachePlantillas!.Value.Estados.TryGetValue(meta, out var estado) && estado == "APPROVED";
     }
 
     /// <summary>Nombre, necesidad o notas del prospecto contienen alguna de las palabras (separadas por "|"), sin distinguir mayúsculas.</summary>

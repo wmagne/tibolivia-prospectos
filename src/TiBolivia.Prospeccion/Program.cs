@@ -68,6 +68,7 @@ builder.Services.AddScoped<ServicioInscripciones>();
 builder.Services.AddScoped<InscripcionAutomatica>();
 builder.Services.AddScoped<ReporteDiario>();
 builder.Services.AddScoped<LectorRespuestasEmail>();
+builder.Services.AddScoped<AvisoInteresado>();
 builder.Services.AddScoped<ImportadorProspectos>();
 if (builder.Configuration.GetValue("Campanas:WorkerHabilitado", true))
 {
@@ -130,6 +131,25 @@ if (args.Contains("--meta-completar"))
 }
 
 // Consulta de solo lectura para el diagnóstico del servidor: estado del número y de las plantillas en Meta.
+// Envía a revisión de Meta las plantillas de WhatsApp del sistema que todavía no existen allá.
+if (args.Contains("--crear-plantillas-meta"))
+{
+    using var scope = app.Services.CreateScope();
+    var sp = scope.ServiceProvider;
+    var db = sp.GetRequiredService<AppDbContext>();
+    var configurador = sp.GetRequiredService<ConfiguradorMeta>();
+    var existentes = (await sp.GetRequiredService<DiagnosticoWhatsApp>().ListarPlantillasAsync(CancellationToken.None))
+        .Select(t => (t.Nombre, t.Idioma)).ToHashSet();
+    foreach (var p in await db.Plantillas.Where(p => p.Canal == Canal.WhatsApp && p.WhatsAppPlantillaMeta != null).ToListAsync())
+    {
+        if (existentes.Contains((p.WhatsAppPlantillaMeta!, p.WhatsAppIdioma ?? "es"))) continue;
+        existentes.Add((p.WhatsAppPlantillaMeta!, p.WhatsAppIdioma ?? "es"));
+        try { await configurador.CrearPlantillaAsync(p, CancellationToken.None); Console.WriteLine($"OK {p.WhatsAppPlantillaMeta}: enviada a revisión de Meta"); }
+        catch (Exception ex) { Console.WriteLine($"ERR {p.WhatsAppPlantillaMeta}: {ex.Message}"); }
+    }
+    return;
+}
+
 if (args.Contains("--plantillas-meta"))
 {
     using var scope = app.Services.CreateScope();

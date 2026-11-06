@@ -150,9 +150,28 @@ public static class WhatsAppWebhook
             return;
         }
 
+        if (texto.Trim().Equals("Ahora no", StringComparison.OrdinalIgnoreCase))
+        {
+            // Botón de la plantilla de presentación: no insistimos (protege la calidad del número ante Meta).
+            prospecto.BajaWhatsApp = true;
+            foreach (var i in prospecto.Inscripciones.Where(i => i.Estado == EstadoInscripcion.Activa))
+            { i.Estado = EstadoInscripcion.Detenida; i.ProximoEnvio = null; }
+            prospecto.Interacciones.Add(new Interaccion { Tipo = TipoInteraccion.Sistema, Detalle = "Respondió \"Ahora no\" a la presentación por WhatsApp." });
+            await db.SaveChangesAsync(ct);
+            await ResponderAsync(db, whatsApp, prospecto,
+                "Entendido, gracias por responder. No le volveremos a escribir por aquí. Si más adelante lo necesita, estamos en tibolivia.com.", ct);
+            return;
+        }
+
         // El prospecto respondió: se pausa la secuencia automática para que lo atienda una persona / el chatbot.
         Respuestas.Registrar(prospecto, ahora);
         await db.SaveChangesAsync(ct);
+
+        // Un aviso por conversación, no uno por cada mensaje: solo el primero en 12 horas.
+        var hace12h = ahora.AddHours(-12);
+        if (await db.Mensajes.CountAsync(m => m.ProspectoId == prospecto.Id && m.Canal == Canal.WhatsApp
+                && m.Direccion == DireccionMensaje.Entrante && m.CreadoEn >= hace12h, ct) <= 1)
+            await sp.GetRequiredService<AvisoInteresado>().EnviarAsync(prospecto, "WhatsApp", null, texto, ct);
 
         var campana = prospecto.Inscripciones.OrderByDescending(i => i.CreadoEn).Select(i => i.Campana).FirstOrDefault();
         var chatbot = sp.GetRequiredService<IClienteChatbot>();

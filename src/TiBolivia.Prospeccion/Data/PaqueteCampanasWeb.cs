@@ -183,6 +183,8 @@ public static partial class PaqueteCampanas
                     "Guion: \"Buenos días, soy {{Comercial}} de TIBolivia. Les escribimos sobre un asistente con inteligencia artificial que atiende su sitio web las 24 horas y les pasa los interesados. ¿Quién ve el sitio web y las consultas que llegan por ahí?\" Ofrezca una demo con su propia información.")),
             ], activa: true);
 
+        await WhatsAppApiAsync(db, facturacion, qr, delivery);
+
         // ---------- Novedades para quienes ya recibieron una campaña y no respondieron ----------
         var novedades = await ServicioAsync(db, "Venda, cobre y facture desde un solo lugar",
             "Oferta conjunta del sitio web: facturación SIAT, cobros con QR, sistema de ventas e inventario, apps de delivery, asistente con IA y área de sistemas.");
@@ -207,5 +209,48 @@ public static partial class PaqueteCampanas
                     <p>Respondan este correo con el producto que les interesa y les enviamos el detalle. Si no desean recibir más correos, usen el enlace de baja al pie.</p>
                     """ + firma)),
             ], activa: true);
+    }
+
+    /// <summary>
+    /// Primer contacto por WhatsApp desde el número oficial (API de Meta), autorizado por el dueño el 06/11/2026.
+    /// Un solo mensaje por empresa, con plantilla de marketing aprobada y botones "Sí, me interesa" / "Ahora no":
+    /// quien toca "Ahora no" queda dado de baja, así el número no acumula bloqueos y conserva su calidad.
+    /// Las campañas no envían nada hasta que Meta aprueba su plantilla (ver InscripcionAutomatica).
+    /// </summary>
+    private static async Task WhatsAppApiAsync(AppDbContext db, Servicio facturacion, Servicio qr, Servicio delivery)
+    {
+        var general = await ServicioAsync(db, "Venda, cobre y facture desde un solo lugar", "");
+        var salud = await ServicioAsync(db, "Salud digital para consultorios",
+            "Agenda de citas con recordatorios por WhatsApp, historia clínica digital y cobro con QR con factura, con 60 días de prueba.");
+
+        (string Campana, string Descripcion, Servicio Servicio, string Plantilla, string Meta, string Texto)[] defs =
+        [
+            ("WhatsApp API: presentación general", "Empresas con celular sin otra campaña en curso.", general,
+                "WhatsApp API · Presentación general", "tibolivia_presentacion",
+                "Hola, le saluda TIBolivia, empresa de software de Santa Cruz. Ayudamos a negocios como {{Empresa}} a vender, cobrar y facturar desde un solo lugar: " +
+                "facturación en línea del SIAT desde Bs 79 al mes, cobros con QR confirmados por el banco y sistema de ventas e inventario. " +
+                "¿Le gustaría ver una demo gratuita de 15 minutos? Responda con uno de los botones."),
+            ("WhatsApp API: cobros con QR", "Restaurantes, cafeterías y tiendas con celular.", qr,
+                "WhatsApp API · Cobros con QR", "tibolivia_cobros_qr",
+                "Hola, le escribe TIBolivia. ¿En {{Empresa}} alguna vez les mostraron una captura de pago QR que no era real? " +
+                "Nuestro sistema genera un QR por venta y confirma el pago directamente con el banco antes de entregar el pedido. " +
+                "El dinero llega a su cuenta y la venta se cierra sola. ¿Le mostramos cómo funciona en una demo gratuita?"),
+            ("WhatsApp API: apps de delivery", "Negocios con delivery, licorerías, courier y mensajería.", delivery,
+                "WhatsApp API · Apps de delivery", "tibolivia_delivery",
+                "Hola, le escribe TIBolivia. Creamos apps de pedidos con la marca de su negocio: sus clientes piden desde el celular, pagan con QR " +
+                "y siguen al repartidor en el mapa, sin comisión por pedido. Ya tenemos una funcionando en Google Play. " +
+                "¿Le gustaría ver esta semana la demo pensada para {{Empresa}} y su equipo de reparto?"),
+            ("WhatsApp API: facturación SIAT", "Comercios, ferreterías, librerías, distribuidoras e importadoras.", facturacion,
+                "WhatsApp API · Facturación SIAT", "tibolivia_facturacion",
+                "Hola, le escribe TIBolivia. Ofrecemos facturación en línea del SIAT para {{Empresa}} desde Bs 79 al mes, con el alta incluida " +
+                "y sin cortes: si el SIAT se cae, usted sigue facturando. ¿Le enviamos el plan que le conviene según cuántas facturas emite al mes?"),
+            ("WhatsApp API: salud digital", "Clínicas, consultorios, odontologías, laboratorios y centros de estética.", salud,
+                "WhatsApp API · Salud digital", "tibolivia_salud",
+                "Hola, le saluda TIBolivia. Para {{Empresa}} tenemos agenda de citas con recordatorios automáticos por WhatsApp, historia clínica digital " +
+                "y cobro con QR con factura. Ofrecemos 60 días de prueba sin costo. ¿Le interesa ver una demo de 15 minutos?"),
+        ];
+        foreach (var d in defs)
+            await CampanaAsync(db, d.Campana, d.Descripcion + " Un mensaje con plantilla aprobada desde el WhatsApp oficial; si responde, se avisa al comercial.",
+                d.Servicio, [new(0, await WhatsAppAsync(db, d.Plantilla, d.Texto, d.Meta, "{{Empresa}}"))], activa: true);
     }
 }

@@ -76,9 +76,15 @@ public class WhatsAppOptions
     public string? AppSecret { get; set; }
     /// <summary>Política de Meta: solo escribir a quien dio su consentimiento (opt-in).</summary>
     public bool RequerirConsentimiento { get; set; } = true;
+    /// <summary>Campañas autorizadas por el dueño para escribir con plantilla de marketing aprobada a quien no dio su permiso
+    /// (primer contacto). La plantilla trae el botón "Ahora no", que da de baja al prospecto para cuidar la calidad del número.</summary>
+    public List<string> CampanasSinConsentimiento { get; set; } = [];
     /// <summary>Número de WhatsApp de la empresa (con código de país) al que llevan los botones de los correos.
     /// Quien escribe ahí da su permiso (opt-in) y entra a la conversación del sistema.</summary>
     public string? NumeroPublico { get; set; }
+    /// <summary>Celular del comercial (WhatsApp de la app del teléfono). Va junto al oficial en los correos, porque los mensajes
+    /// al número oficial entran al sistema (menú Mensajes y aviso por correo), no a un celular.</summary>
+    public string? NumeroComercial { get; set; }
     /// <summary>Mensaje automático para quien escribe por primera vez (o tras 24 h sin conversación) si no hay chatbot.</summary>
     public string? MensajeBienvenida { get; set; }
     public bool Simulacion => EsMeta

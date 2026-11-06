@@ -64,20 +64,29 @@ public partial class RenderizadorPlantillas(IOptions<CampanasOptions> opciones, 
         "</table>";
 
     /// <summary>Botones "Responder por correo" y "Escribir por WhatsApp" (al celular del comercial asignado).</summary>
+    /// <summary>59170935349 → 709 35349 (como lo escriben los bolivianos).</summary>
+    private static string Visible(string numero)
+    {
+        var local = numero.StartsWith("591") ? numero[3..] : numero;
+        return local.Length == 8 ? $"{local[..3]} {local[3..]}" : local;
+    }
+
     private string Botones(Prospecto p)
     {
         var correo = p.AsignadoA?.Email ?? smtp.Value.RemitenteEmail;
         var asunto = Uri.EscapeDataString($"Diagnóstico gratuito - {p.Empresa}");
         var b = $"<a href=\"mailto:{correo}?subject={asunto}\" style=\"display:inline-block;background:#1565c0;color:#ffffff;text-decoration:none;" +
                 "font-weight:bold;padding:12px 20px;border-radius:8px;margin:4px 8px 4px 0;\">Quiero mi diagnóstico gratuito</a>";
-        // Preferimos el WhatsApp oficial de la empresa: quien escribe da su permiso y la conversación entra al sistema.
-        var telefono = Telefonos.Normalizar(whatsApp.CurrentValue.NumeroPublico) ?? Telefonos.Normalizar(p.AsignadoA?.PhoneNumber);
-        if (telefono is not null)
-        {
-            var texto = Uri.EscapeDataString($"Hola, soy de {p.Empresa}. Me interesa el diagnóstico gratuito de TIBolivia.");
-            b += $"<a href=\"https://wa.me/{telefono}?text={texto}\" style=\"display:inline-block;background:#25d366;color:#ffffff;text-decoration:none;" +
-                 "font-weight:bold;padding:12px 20px;border-radius:8px;margin:4px 0;\">Escribir por WhatsApp</a>";
-        }
+        // Dos números: el oficial (conectado al sistema, la conversación queda registrada) y el del comercial (celular).
+        var texto = Uri.EscapeDataString($"Hola, soy de {p.Empresa}. Me interesa el diagnóstico gratuito de TIBolivia.");
+        var oficial = Telefonos.Normalizar(whatsApp.CurrentValue.NumeroPublico);
+        var comercial = Telefonos.Normalizar(whatsApp.CurrentValue.NumeroComercial) ?? Telefonos.Normalizar(p.AsignadoA?.PhoneNumber);
+        if (oficial is not null)
+            b += $"<a href=\"https://wa.me/{oficial}?text={texto}\" style=\"display:inline-block;background:#25d366;color:#ffffff;text-decoration:none;" +
+                 $"font-weight:bold;padding:12px 20px;border-radius:8px;margin:4px 8px 4px 0;\">WhatsApp {Visible(oficial)}</a>";
+        if (comercial is not null && comercial != oficial)
+            b += $"<a href=\"https://wa.me/{comercial}?text={texto}\" style=\"display:inline-block;background:#128c7e;color:#ffffff;text-decoration:none;" +
+                 $"font-weight:bold;padding:12px 20px;border-radius:8px;margin:4px 0;\">WhatsApp {Visible(comercial)}</a>";
         return $"<div style=\"margin:20px 0 8px;\">{b}</div>";
     }
 
