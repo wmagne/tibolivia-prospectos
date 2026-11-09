@@ -22,11 +22,15 @@ public class InscripcionAutomatica(AppDbContext db, ServicioInscripciones inscri
     public async Task<int> EjecutarAsync(CancellationToken ct)
     {
         var total = 0;
+        var whatsAppApiOk = await RevisarPagoWhatsAppApiAsync(ct);
         // Primero las reglas específicas (por rubro u origen), para que sus prospectos no caigan en las generales.
         var reglas = opciones.Value.OtrasAutoInscripciones.Prepend(opciones.Value.AutoInscripcion)
             .OrderBy(r => r.EsEspecifica ? 0 : 1).ToList();
         foreach (var regla in reglas)
+        {
+            if (!whatsAppApiOk && regla.Destino.Equals("WhatsAppApi", StringComparison.OrdinalIgnoreCase)) continue;
             total += await EjecutarReglaAsync(regla, reglas.Where(r => r.Habilitada && r.EsEspecifica && r != regla).ToList(), ct);
+        }
         return total;
     }
 
@@ -136,6 +140,49 @@ public class InscripcionAutomatica(AppDbContext db, ServicioInscripciones inscri
         return destino.Equals("Celular", StringComparison.OrdinalIgnoreCase)
             ? q.Where(celular).Where(p => !p.BajaWhatsApp)
             : q.Where(Negar(celular));
+    }
+
+    /// <summary>
+    /// Meta rechaza los mensajes de marketing con el error 131042 si la cuenta no tiene medio de pago. Mientras pase eso
+    /// no se inscriben empresas nuevas (se gastarían en envíos que fallan): cada 2 horas se reintenta UNA que ya falló,
+    /// como prueba, y cuando un envío sale bien se reintentan todas las que fallaron por el pago.
+    /// </summary>
+    private async Task<bool> RevisarPagoWhatsAppApiAsync(CancellationToken ct)
+    {
+        var ahora = tiempo.GetUtcNow().UtcDateTime;
+        var ultimo = await db.Mensajes
+            .Where(m => m.Canal == Canal.WhatsApp && m.Direccion == DireccionMensaje.Saliente
+                && (m.Estado == EstadoMensaje.Enviado || m.Estado == EstadoMensaje.Fallido)
+                && m.Inscripcion != null && m.Inscripcion.Campana.Nombre.StartsWith("WhatsApp API"))
+            .OrderByDescending(m => m.CreadoEn).Select(m => new { m.Estado, m.Error, m.CreadoEn }).FirstOrDefaultAsync(ct);
+        var faltaPago = ultimo is { Estado: EstadoMensaje.Fallido } && (ultimo.Error ?? "").Contains("131042");
+
+        var pendientes = db.Inscripciones.Where(i => i.Estado != EstadoInscripcion.Activa && i.Campana.Nombre.StartsWith("WhatsApp API")
+            && db.Mensajes.Any(m => m.InscripcionId == i.Id && m.Error != null && m.Error.Contains("131042"))
+            && !db.Mensajes.Any(m => m.InscripcionId == i.Id && m.Estado == EstadoMensaje.Enviado));
+
+        List<InscripcionCampana> reintentar;
+        if (faltaPago)
+        {
+            if (ultimo!.CreadoEn > ahora.AddHours(-2) || !horario.EsHorarioLaboral(ahora)) return false;
+            reintentar = await pendientes.OrderBy(i => i.Id).Take(1).ToListAsync(ct);
+        }
+        else reintentar = await pendientes.OrderBy(i => i.Id).Take(30).ToListAsync(ct);
+
+        foreach (var i in reintentar)
+        {
+            i.Estado = EstadoInscripcion.Activa;
+            i.PasoActual = 0;
+            i.Intentos = 0;
+            i.ProximoEnvio = ahora;
+        }
+        if (reintentar.Count > 0)
+        {
+            await db.SaveChangesAsync(ct);
+            log.LogInformation("WhatsApp API: {Cantidad} envíos que fallaron por falta de medio de pago vuelven a intentarse", reintentar.Count);
+        }
+        if (faltaPago) log.LogWarning("WhatsApp API en pausa: Meta pide configurar la moneda y el medio de pago de la cuenta (error 131042).");
+        return !faltaPago;
     }
 
     /// <summary>La campaña por la API solo arranca cuando Meta aprobó la plantilla de su primer paso (si no, cada envío fallaría).</summary>
