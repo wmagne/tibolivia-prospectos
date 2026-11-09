@@ -32,6 +32,12 @@ SQL
   docker exec -i tibolivia-prospectos-db psql -U tibolivia -d tibolivia_prospeccion -tA <<'SQL' 2>/dev/null
 SELECT "Direccion" || ' ' || "Estado" || ': ' || count(*) FROM "Mensajes" WHERE "Canal" = 'WhatsApp' GROUP BY "Direccion", "Estado";
 SQL
+  echo "== Errores de WhatsApp más frecuentes (7 días)"
+  docker exec -i tibolivia-prospectos-db psql -U tibolivia -d tibolivia_prospeccion -tA -F ' | ' <<'SQL' 2>/dev/null
+SELECT count(*), left(coalesce("Error", '-'), 300) FROM "Mensajes"
+ WHERE "Canal" = 'WhatsApp' AND "Estado" IN ('Fallido', 'Omitido') AND "CreadoEn" > now() - interval '7 days'
+ GROUP BY 2 ORDER BY 1 DESC LIMIT 8;
+SQL
 fi
 if docker ps --format '{{.Names}}' | grep -qx tibolivia-prospectos-db; then
   echo "== Campañas (activa | inscritos activos | finalizados/otros | próximo envío)"
