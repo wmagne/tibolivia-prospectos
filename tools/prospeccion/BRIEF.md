@@ -39,7 +39,11 @@ Empresa,Contacto,Cargo,Email,Telefono,Rubro,Ciudad,SitioWeb,ConsentimientoWhatsA
 - Al terminar responde SOLO con: cantidad de filas, cuántas con email, y las fuentes principales usadas (máx. 5 líneas).
 
 ## Presupuesto de búsquedas (IMPORTANTE)
-El límite de búsquedas web es compartido entre 6 agentes: usa como máximo **30 búsquedas WebSearch**, en modo "standard".
-Aprovecha cada búsqueda: prefiere consultas que devuelvan LISTADOS de varias empresas a la vez (directorios, "empresas de X en Y", listas de socios, rankings),
-y no hagas una búsqueda por empresa. WebFetch probablemente no funciona en este entorno; si falla una vez, no lo reintentes.
+El límite de búsquedas web es compartido entre varios agentes: usa como máximo **22 búsquedas WebSearch**, en modo "standard".
+**Desde el 17/11/2026 la red permite abrir los directorios** www.amarillas.bo, www.directorio.com.bo, www.boliviaentusmanos.com,
+www.construex.com.bo, www.ibce.org.bo, www.fexpocruz.com.bo, www.asfi.gob.bo, www.boliviaemprende.com, bolivia.paginasamarillas.com
+y algunos diarios (lostiempos.com, eju.tv, correodelsur.com). Úsalos: abre con WebFetch (o `curl -sL` por Bash) las páginas de
+LISTADO por rubro y ciudad de esos directorios y saca de cada página varias empresas con su teléfono y correo publicados.
+Eso rinde mucho más que los resúmenes del buscador. Usa WebSearch sobre todo para encontrar las URL de esos listados.
+cybo.com y vymaps.com responden 403: no insistas con ellos.
 Guarda el CSV antes de quedarte sin búsquedas.
