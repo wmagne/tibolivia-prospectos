@@ -150,6 +150,27 @@ if (args.Contains("--crear-plantillas-meta"))
     return;
 }
 
+// Envía a revisión de Meta la plantilla de los avisos SICOES, si todavía no existe allá.
+if (args.Contains("--crear-plantilla-sicoes"))
+{
+    using var scope = app.Services.CreateScope();
+    var sp = scope.ServiceProvider;
+    try
+    {
+        var existe = (await sp.GetRequiredService<DiagnosticoWhatsApp>().ListarPlantillasAsync(CancellationToken.None))
+            .FirstOrDefault(t => t.Nombre == ConfiguradorMeta.PlantillaAvisoSicoes && t.Idioma == "es");
+        if (existe is not null) Console.WriteLine($"OK {ConfiguradorMeta.PlantillaAvisoSicoes}: ya existe en Meta ({existe.Estado})");
+        else
+        {
+            await sp.GetRequiredService<ConfiguradorMeta>().CrearPlantillaUtilidadAsync(ConfiguradorMeta.PlantillaAvisoSicoes, "es",
+                ConfiguradorMeta.TextoAvisoSicoes, ConfiguradorMeta.EjemplosAvisoSicoes, CancellationToken.None);
+            Console.WriteLine($"OK {ConfiguradorMeta.PlantillaAvisoSicoes}: enviada a revisión de Meta");
+        }
+    }
+    catch (Exception ex) { Console.WriteLine($"ERR {ConfiguradorMeta.PlantillaAvisoSicoes}: {ex.Message}"); }
+    return;
+}
+
 if (args.Contains("--plantillas-meta"))
 {
     using var scope = app.Services.CreateScope();
