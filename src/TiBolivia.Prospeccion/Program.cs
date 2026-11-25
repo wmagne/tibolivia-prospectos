@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using TiBolivia.Prospeccion.Data;
 using TiBolivia.Prospeccion.Domain;
 using TiBolivia.Prospeccion.Services;
+using TiBolivia.Prospeccion.Services.Sicoes;
 using TiBolivia.Prospeccion.Webhooks;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -70,11 +71,17 @@ builder.Services.AddScoped<ReporteDiario>();
 builder.Services.AddScoped<LectorRespuestasEmail>();
 builder.Services.AddScoped<AvisoInteresado>();
 builder.Services.AddScoped<ImportadorProspectos>();
+// Módulo Alertas SICOES: tablas, servicios y proceso propios (ver Domain/Sicoes.cs).
+builder.Services.Configure<SicoesOptions>(builder.Configuration.GetSection("Sicoes"));
+builder.Services.AddScoped<ServicioSicoes>();
+builder.Services.AddScoped<AvisosSicoes>();
+builder.Services.AddHttpClient<FuenteSicoesUrl>();
 if (builder.Configuration.GetValue("Campanas:WorkerHabilitado", true))
 {
     builder.Services.AddHostedService<WorkerCampanas>();
     builder.Services.AddHostedService<WorkerRespuestasEmail>();
     builder.Services.AddHostedService<WorkerReporteDiario>();
+    builder.Services.AddHostedService<WorkerSicoes>();
 }
 
 builder.Services.Configure<ForwardedHeadersOptions>(o =>

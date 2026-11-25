@@ -1,0 +1,61 @@
+@page
+@using TiBolivia.Prospeccion.Domain
+@using TiBolivia.Prospeccion.Services.Sicoes
+@model TiBolivia.Prospeccion.Pages.Sicoes.PerfilesModel
+@{ ViewData["Title"] = "Perfiles SICOES"; var admin = User.IsInRole(Roles.Admin); }
+<h3>Perfiles y tarifas</h3>
+<p class="text-muted small">Cada perfil dice qué compras del Estado le interesan a un cliente. Separe las palabras con comas; una frase como
+    «soporte técnico» cuenta como una sola palabra clave. Mayúsculas, tildes y plurales no importan.</p>
+@if (TempData["Mensaje"] is string m) { <div class="alert alert-success py-2">@m</div> }
+
+@foreach (var p in Model.Perfiles)
+{
+    <form method="post" class="card p-3 mb-3">
+        <input type="hidden" name="Editado.Id" value="@p.Id" />
+        <h5>@p.Nombre</h5>
+        <div class="row g-2">
+            <div class="col-12"><label class="form-label small">Palabras clave</label>
+                <textarea name="Editado.PalabrasClave" rows="3" class="form-control form-control-sm" disabled="@(!admin)">@p.PalabrasClave</textarea></div>
+            <div class="col-12"><label class="form-label small">Palabras excluidas</label>
+                <textarea name="Editado.PalabrasExcluidas" rows="2" class="form-control form-control-sm" disabled="@(!admin)">@p.PalabrasExcluidas</textarea></div>
+            <div class="col-md-4"><label class="form-label small">Departamentos (vacío = todo el país)</label>
+                <input name="Editado.Departamentos" value="@p.Departamentos" class="form-control form-control-sm" disabled="@(!admin)" /></div>
+            <div class="col-md-2 d-flex align-items-end"><div class="form-check">
+                <input type="checkbox" name="Editado.IncluyeNacional" value="true" class="form-check-input" checked="@p.IncluyeNacional" disabled="@(!admin)" />
+                <label class="form-check-label small">Incluir alcance nacional</label></div></div>
+            <div class="col-md-3"><label class="form-label small">Monto mínimo (Bs)</label>
+                <input name="Editado.MontoMinimo" type="number" step="0.01" value="@p.MontoMinimo.ToString(System.Globalization.CultureInfo.InvariantCulture)" class="form-control form-control-sm" disabled="@(!admin)" /></div>
+            <div class="col-md-3"><label class="form-label small">Plan</label>
+                <select name="Editado.Plan" class="form-select form-select-sm" disabled="@(!admin)">
+                    @foreach (var pl in Enum.GetValues<PlanSicoes>()) { <option value="@pl" selected="@(pl == p.Plan)">@pl</option> }
+                </select></div>
+            <div class="col-md-3"><label class="form-label small">Tarifa mensual (Bs, sin cobro todavía)</label>
+                <input name="Editado.TarifaMensualBs" type="number" step="0.01" value="@p.TarifaMensualBs.ToString(System.Globalization.CultureInfo.InvariantCulture)" class="form-control form-control-sm" disabled="@(!admin)" /></div>
+            <div class="col-md-3"><label class="form-label small">Piloto gratis hasta</label>
+                <input name="Editado.PilotoHasta" type="date" value="@p.PilotoHasta?.ToString("yyyy-MM-dd")" class="form-control form-control-sm" disabled="@(!admin)" /></div>
+            <div class="col-md-3"><label class="form-label small">Correo de avisos</label>
+                <input name="Editado.CorreoAvisos" value="@p.CorreoAvisos" class="form-control form-control-sm" disabled="@(!admin)" /></div>
+            <div class="col-md-3"><label class="form-label small">WhatsApp de avisos</label>
+                <input name="Editado.WhatsAppAvisos" value="@p.WhatsAppAvisos" class="form-control form-control-sm" disabled="@(!admin)" /></div>
+            <div class="col-12 form-check ms-1">
+                <input type="checkbox" name="Editado.Activo" value="true" class="form-check-input" checked="@p.Activo" disabled="@(!admin)" />
+                <label class="form-check-label small">Perfil activo</label></div>
+        </div>
+        @if (admin) { <div class="mt-2"><button class="btn btn-primary btn-sm">Guardar</button></div> }
+        <p class="small text-muted mt-2 mb-0">En pruebas, los avisos solo salen a los destinos permitidos en la configuración del servidor, aunque aquí se cargue otro.</p>
+    </form>
+}
+
+<div class="card p-3">
+    <h5>Tarifas de referencia</h5>
+    <p class="small text-muted">Precios de partida del plan de negocio, para anotar en la ficha de cada cliente. El sistema todavía no cobra.</p>
+    <table class="table table-sm mb-0">
+        <thead><tr><th>Servicio</th><th class="text-end">Precio</th><th>Detalle</th></tr></thead>
+        <tbody>
+        @foreach (var t in TarifasSicoes.Lista)
+        {
+            <tr><td>@t.Servicio</td><td class="text-end text-nowrap">@(t.PrecioBs > 0 ? $"Bs {t.PrecioBs:N0} {t.Unidad}" : $"Gratis {t.Unidad}")</td><td class="small">@t.Detalle</td></tr>
+        }
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,68 @@
+@page
+@using TiBolivia.Prospeccion.Domain
+@using TiBolivia.Prospeccion.Services
+@model TiBolivia.Prospeccion.Pages.Sicoes.IndexModel
+@{ ViewData["Title"] = "Alertas SICOES"; }
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+    <h3 class="mb-0">Alertas SICOES <span class="badge bg-warning text-dark fs-6 align-middle">en pruebas</span></h3>
+    <div class="d-flex gap-2">
+        <a asp-page="Cargar" class="btn btn-primary btn-sm"><i class="bi bi-upload"></i> Cargar lista</a>
+        <a asp-page="Perfiles" class="btn btn-outline-secondary btn-sm"><i class="bi bi-sliders"></i> Perfiles y tarifas</a>
+    </div>
+</div>
+<p class="text-muted small">Compras del Estado que encajan con un perfil (puntaje 60 o más). Las que cierran antes aparecen primero.
+    @if (Model.UltimaLectura is { } l)
+    {
+        <span>Última lectura: <b>@Fechas.ABolivia(l.Inicio).ToString("dd/MM HH:mm")</b> · @l.Leidos leídos · @l.Relevantes nuevas
+        @if (!l.Exito) { <span class="text-danger">· @l.Error</span> }</span>
+    }
+    else { <span>Todavía no hay lecturas.</span> }
+    · @Model.ProcesosGuardados procesos guardados.</p>
+@if (TempData["Mensaje"] is string m) { <div class="alert alert-success py-2">@m</div> }
+
+<ul class="nav nav-pills mb-3">
+    <li class="nav-item"><a class="nav-link @(Model.Ver is null ? "active" : "")" asp-route-ver="">Abiertas</a></li>
+    <li class="nav-item"><a class="nav-link @(Model.Ver == "cerradas" ? "active" : "")" asp-route-ver="cerradas">Cerradas</a></li>
+    <li class="nav-item"><a class="nav-link @(Model.Ver == "todas" ? "active" : "")" asp-route-ver="todas">Todas</a></li>
+</ul>
+
+@if (Model.Oportunidades.Count == 0)
+{
+    <div class="card p-3 text-muted">No hay oportunidades en esta vista. Cargue una lista desde <a asp-page="Cargar">Cargar lista</a>.</div>
+}
+else
+{
+    <div class="table-responsive card p-2"><table class="table table-sm align-middle mb-0">
+        <thead><tr><th>Cierre</th><th>Proceso</th><th class="text-end">Monto (Bs)</th><th>Puntaje</th><th>Estado</th></tr></thead>
+        <tbody>
+        @foreach (var o in Model.Oportunidades)
+        {
+            var p = o.Proceso;
+            var urgente = p.FechaLimite is { } f && f < DateTime.UtcNow.AddDays(3) && f > DateTime.UtcNow;
+            <tr>
+                <td class="text-nowrap small @(urgente ? "text-danger fw-bold" : "")">@(p.FechaLimite is { } fl ? Fechas.ABolivia(fl).ToString("dd/MM HH:mm") : "-")</td>
+                <td>
+                    <div class="fw-semibold">@p.Objeto</div>
+                    <div class="small text-muted">@p.Entidad · @(p.Departamento ?? "-") · @(p.Modalidad ?? "-")
+                        @if (p.EsConsultaDePrecios) { <span class="badge bg-warning text-dark">Consulta de Precios</span> }</div>
+                    <div class="small text-muted">CUCE @p.Cuce @if (p.Enlace is not null) { <text>· <a href="@p.Enlace" target="_blank" rel="noopener">ver en SICOES</a></text> } · @o.Perfil.Nombre · @o.Motivo</div>
+                    @if (!string.IsNullOrEmpty(o.Notas)) { <div class="small fst-italic">@o.Notas</div> }
+                </td>
+                <td class="text-end text-nowrap">@(p.Monto is { } mo ? mo.ToString("N0") : "-")</td>
+                <td><span class="badge bg-@(o.Puntaje >= 80 ? "success" : "secondary")">@o.Puntaje</span></td>
+                <td style="min-width:210px">
+                    <form method="post" asp-page-handler="Estado" asp-route-id="@o.Id" asp-route-ver="@Model.Ver" class="d-flex gap-1">
+                        <select name="estado" class="form-select form-select-sm">
+                            @foreach (var e in Enum.GetValues<EstadoOportunidadSicoes>())
+                            {
+                                <option value="@e" selected="@(e == o.Estado)">@TiBolivia.Prospeccion.Pages.Sicoes.IndexModel.Nombre(e)</option>
+                            }
+                        </select>
+                        <button class="btn btn-sm btn-outline-primary">Guardar</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table></div>
+}

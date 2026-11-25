@@ -16,9 +16,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Interaccion> Interacciones => Set<Interaccion>();
     public DbSet<AjusteGuardado> Ajustes => Set<AjusteGuardado>();
 
+    public DbSet<SicoesProceso> SicoesProcesos => Set<SicoesProceso>();
+    public DbSet<SicoesPerfil> SicoesPerfiles => Set<SicoesPerfil>();
+    public DbSet<SicoesOportunidad> SicoesOportunidades => Set<SicoesOportunidad>();
+    public DbSet<SicoesLectura> SicoesLecturas => Set<SicoesLectura>();
+    public DbSet<SicoesAviso> SicoesAvisos => Set<SicoesAviso>();
+
     protected override void OnModelCreating(ModelBuilder b)
     {
         base.OnModelCreating(b);
+        ConfigurarSicoes(b);
 
         b.Entity<AjusteGuardado>(e =>
         {
@@ -101,6 +108,73 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             e.Property(x => x.Tipo).HasConversion<string>().HasMaxLength(20);
             e.HasOne(x => x.Prospecto).WithMany(p => p.Interacciones).HasForeignKey(x => x.ProspectoId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.Usuario).WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.SetNull);
+        });
+    }
+
+    /// <summary>Tablas del módulo SICOES: sin claves hacia prospectos ni campañas, para poder separarlo sin migrar datos ajenos.</summary>
+    private static void ConfigurarSicoes(ModelBuilder b)
+    {
+        b.Entity<SicoesProceso>(e =>
+        {
+            e.ToTable("SicoesProcesos");
+            e.Property(x => x.Cuce).HasMaxLength(60).IsRequired();
+            e.HasIndex(x => x.Cuce).IsUnique();
+            e.Property(x => x.Entidad).HasMaxLength(300).IsRequired();
+            e.Property(x => x.Objeto).HasMaxLength(2000).IsRequired();
+            e.Property(x => x.Modalidad).HasMaxLength(120);
+            e.Property(x => x.Monto).HasPrecision(16, 2);
+            e.Property(x => x.Departamento).HasMaxLength(60);
+            e.Property(x => x.Enlace).HasMaxLength(500);
+            e.Property(x => x.Estado).HasMaxLength(80);
+            e.Property(x => x.Origen).HasMaxLength(60);
+            e.HasIndex(x => x.FechaLimite);
+            e.Ignore(x => x.EsConsultaDePrecios);
+        });
+
+        b.Entity<SicoesPerfil>(e =>
+        {
+            e.ToTable("SicoesPerfiles");
+            e.Property(x => x.Nombre).HasMaxLength(150).IsRequired();
+            e.Property(x => x.PalabrasClave).HasMaxLength(2000);
+            e.Property(x => x.PalabrasExcluidas).HasMaxLength(2000);
+            e.Property(x => x.Departamentos).HasMaxLength(300);
+            e.Property(x => x.MontoMinimo).HasPrecision(16, 2);
+            e.Property(x => x.TarifaMensualBs).HasPrecision(10, 2);
+            e.Property(x => x.Plan).HasConversion<string>().HasMaxLength(30);
+            e.Property(x => x.CorreoAvisos).HasMaxLength(300);
+            e.Property(x => x.WhatsAppAvisos).HasMaxLength(100);
+        });
+
+        b.Entity<SicoesOportunidad>(e =>
+        {
+            e.ToTable("SicoesOportunidades");
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(30);
+            e.Property(x => x.Motivo).HasMaxLength(500);
+            e.Property(x => x.Notas).HasMaxLength(2000);
+            e.HasIndex(x => new { x.ProcesoId, x.PerfilId }).IsUnique();
+            e.HasIndex(x => x.Estado);
+            e.HasOne(x => x.Proceso).WithMany().HasForeignKey(x => x.ProcesoId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Perfil).WithMany().HasForeignKey(x => x.PerfilId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<SicoesLectura>(e =>
+        {
+            e.ToTable("SicoesLecturas");
+            e.Property(x => x.Fuente).HasMaxLength(100);
+            e.Property(x => x.Error).HasMaxLength(1000);
+            e.HasIndex(x => x.Inicio);
+        });
+
+        b.Entity<SicoesAviso>(e =>
+        {
+            e.ToTable("SicoesAvisos");
+            e.Property(x => x.Tipo).HasMaxLength(30);
+            e.Property(x => x.Canal).HasMaxLength(20);
+            e.Property(x => x.Destino).HasMaxLength(300);
+            e.Property(x => x.Clave).HasMaxLength(30);
+            e.Property(x => x.Error).HasMaxLength(1000);
+            e.HasIndex(x => new { x.OportunidadId, x.Tipo, x.Canal });
+            e.HasOne(x => x.Oportunidad).WithMany().HasForeignKey(x => x.OportunidadId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }
