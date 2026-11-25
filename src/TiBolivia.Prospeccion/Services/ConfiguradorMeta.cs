@@ -75,6 +75,26 @@ public partial class ConfiguradorMeta(HttpClient http, IOptionsSnapshot<WhatsApp
         }, ct);
     }
 
+    /// <summary>Plantilla de los avisos del módulo SICOES: aviso interno al equipo, no publicidad (categoría utilidad).</summary>
+    public const string PlantillaAvisoSicoes = "tibolivia_alerta_sicoes";
+    public const string TextoAvisoSicoes =
+        "Alerta SICOES: {{1}} publicó una compra: {{2}}. Monto y modalidad: {{3}}. Cierre: {{4}}. Revise el detalle en el Sistema de Prospección.";
+    public static readonly string[] EjemplosAvisoSicoes =
+        ["Gobierno Autónomo Municipal de Santa Cruz", "Adquisición de computadoras de escritorio", "Bs 245.000 · ANPE", "27/11 10:00"];
+
+    /// <summary>
+    /// Crea en Meta una plantilla de utilidad (sin botones): sirve para avisos que el destinatario pidió recibir.
+    /// Meta la revisa antes de dejar usarla, igual que las de marketing.
+    /// </summary>
+    public Task CrearPlantillaUtilidadAsync(string nombre, string idioma, string texto, IReadOnlyList<string> ejemplos, CancellationToken ct) =>
+        PostAsync(O.Url($"{O.BusinessAccountId}/message_templates"), new
+        {
+            name = nombre,
+            language = idioma,
+            category = "UTILITY",
+            components = new[] { new { type = "BODY", text = texto, example = new { body_text = new[] { ejemplos.ToArray() } } } },
+        }, ct);
+
     /// <summary>Suscribe la app a la cuenta de WhatsApp: sin esto Meta no envía los mensajes entrantes al webhook.</summary>
     public Task SuscribirAppAsync(CancellationToken ct) => PostAsync(O.Url($"{O.BusinessAccountId}/subscribed_apps"), null, ct);
 
