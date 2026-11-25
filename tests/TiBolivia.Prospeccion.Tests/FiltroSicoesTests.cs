@@ -118,3 +118,16 @@ public class FiltroSicoesTests
         Assert.False(ev.EsRelevante, ev.Motivo);
     }
 }
+
+public class PlantillaAvisoSicoesTests
+{
+    [Fact]
+    public void La_plantilla_de_Meta_tiene_las_4_variables_que_manda_el_aviso()
+    {
+        // AvisosSicoes envía entidad, objeto, monto y modalidad, y cierre: si la plantilla aprobada cambia, Meta rechaza el envío.
+        var variables = System.Text.RegularExpressions.Regex.Matches(TiBolivia.Prospeccion.Services.ConfiguradorMeta.TextoAvisoSicoes, @"\{\{(\d)\}\}")
+            .Select(m => m.Groups[1].Value).ToList();
+        Assert.Equal(["1", "2", "3", "4"], variables);
+        Assert.Equal(4, TiBolivia.Prospeccion.Services.ConfiguradorMeta.EjemplosAvisoSicoes.Length);
+    }
+}
