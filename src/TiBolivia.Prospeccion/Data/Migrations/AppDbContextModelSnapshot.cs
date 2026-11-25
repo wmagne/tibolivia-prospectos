@@ -583,6 +583,280 @@ namespace TiBolivia.Prospeccion.Data.Migrations
                     b.ToTable("Servicios");
                 });
 
+            modelBuilder.Entity("TiBolivia.Prospeccion.Domain.SicoesAviso", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Canal")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Clave")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Destino")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<DateTime>("EnviadoEn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<bool>("Exito")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("OportunidadId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OportunidadId", "Tipo", "Canal");
+
+                    b.ToTable("SicoesAvisos", (string)null);
+                });
+
+            modelBuilder.Entity("TiBolivia.Prospeccion.Domain.SicoesLectura", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<bool>("Exito")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("Fin")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Fuente")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("Inicio")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Leidos")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Nuevos")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Relevantes")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Inicio");
+
+                    b.ToTable("SicoesLecturas", (string)null);
+                });
+
+            modelBuilder.Entity("TiBolivia.Prospeccion.Domain.SicoesOportunidad", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ActualizadoEn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreadoEn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Motivo")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Notas")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("PerfilId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ProcesoId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Puntaje")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Estado");
+
+                    b.HasIndex("PerfilId");
+
+                    b.HasIndex("ProcesoId", "PerfilId")
+                        .IsUnique();
+
+                    b.ToTable("SicoesOportunidades", (string)null);
+                });
+
+            modelBuilder.Entity("TiBolivia.Prospeccion.Domain.SicoesPerfil", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("CorreoAvisos")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<DateTime>("CreadoEn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Departamentos")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<bool>("IncluyeNacional")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("MontoMinimo")
+                        .HasPrecision(16, 2)
+                        .HasColumnType("numeric(16,2)");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("PalabrasClave")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("PalabrasExcluidas")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime?>("PilotoHasta")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Plan")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<decimal>("TarifaMensualBs")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<string>("WhatsAppAvisos")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SicoesPerfiles", (string)null);
+                });
+
+            modelBuilder.Entity("TiBolivia.Prospeccion.Domain.SicoesProceso", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ActualizadoEn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Cuce")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("Departamento")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("Enlace")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Entidad")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Estado")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<DateTime?>("FechaLimite")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("FechaPublicacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("LeidoEn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Modalidad")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<decimal?>("Monto")
+                        .HasPrecision(16, 2)
+                        .HasColumnType("numeric(16,2)");
+
+                    b.Property<string>("Objeto")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("Origen")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Cuce")
+                        .IsUnique();
+
+                    b.HasIndex("FechaLimite");
+
+                    b.ToTable("SicoesProcesos", (string)null);
+                });
+
             modelBuilder.Entity("TiBolivia.Prospeccion.Domain.Usuario", b =>
                 {
                     b.Property<string>("Id")
@@ -797,6 +1071,35 @@ namespace TiBolivia.Prospeccion.Data.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("AsignadoA");
+                });
+
+            modelBuilder.Entity("TiBolivia.Prospeccion.Domain.SicoesAviso", b =>
+                {
+                    b.HasOne("TiBolivia.Prospeccion.Domain.SicoesOportunidad", "Oportunidad")
+                        .WithMany()
+                        .HasForeignKey("OportunidadId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Oportunidad");
+                });
+
+            modelBuilder.Entity("TiBolivia.Prospeccion.Domain.SicoesOportunidad", b =>
+                {
+                    b.HasOne("TiBolivia.Prospeccion.Domain.SicoesPerfil", "Perfil")
+                        .WithMany()
+                        .HasForeignKey("PerfilId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TiBolivia.Prospeccion.Domain.SicoesProceso", "Proceso")
+                        .WithMany()
+                        .HasForeignKey("ProcesoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Perfil");
+
+                    b.Navigation("Proceso");
                 });
 
             modelBuilder.Entity("TiBolivia.Prospeccion.Domain.Campana", b =>

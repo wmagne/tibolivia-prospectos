@@ -36,6 +36,7 @@ public static class DatosIniciales
         }
 
         if (!await db.Servicios.AnyAsync()) await CrearEjemplosAsync(db);
+        await Services.Sicoes.PerfilesSicoes.CrearPerfilTiBoliviaAsync(db);
         await PaqueteCampanas.AplicarAsync(db);
         await CargaListas.AplicarAsync(sp, (await usuarios.FindByEmailAsync(emailAdmin))?.Id,
             sp.GetRequiredService<ILoggerFactory>().CreateLogger("CargaListas"));

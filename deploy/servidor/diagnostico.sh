@@ -76,6 +76,36 @@ SELECT to_char(m."CreadoEn" - interval '4 hours', 'DD/MM HH24:MI'), m."Estado", 
   FROM "Mensajes" m JOIN "Prospectos" p ON p."Id" = m."ProspectoId" WHERE m."Canal" = 'Email' ORDER BY m."CreadoEn" DESC LIMIT 15;
 SQL
 fi
+if docker ps --format '{{.Names}}' | grep -qx tibolivia-prospectos-db \
+   && docker exec tibolivia-prospectos-db psql -U tibolivia -d tibolivia_prospeccion -tAc "SELECT to_regclass('\"SicoesLecturas\"')" 2>/dev/null | grep -q Sicoes; then
+  echo "== SICOES: últimas lecturas (hora Bolivia | fuente | leídos | nuevos | relevantes | resultado)"
+  docker exec -i tibolivia-prospectos-db psql -U tibolivia -d tibolivia_prospeccion -tA -F ' | ' <<'SQL' 2>/dev/null
+SELECT to_char("Inicio" - interval '4 hours', 'DD/MM HH24:MI'), "Fuente", "Leidos", "Nuevos", "Relevantes",
+       CASE WHEN "Exito" THEN 'ok' ELSE 'ERROR: ' || left(coalesce("Error", '-'), 200) END
+  FROM "SicoesLecturas" ORDER BY "Inicio" DESC LIMIT 6;
+SQL
+  echo "== SICOES: procesos guardados | leídos en 24 h | oportunidades abiertas | cierran en 3 días"
+  docker exec -i tibolivia-prospectos-db psql -U tibolivia -d tibolivia_prospeccion -tA -F ' | ' <<'SQL' 2>/dev/null
+SELECT (SELECT count(*) FROM "SicoesProcesos"),
+       (SELECT count(*) FROM "SicoesProcesos" WHERE "ActualizadoEn" > now() - interval '24 hours'),
+       (SELECT count(*) FROM "SicoesOportunidades" WHERE "Estado" NOT IN ('Ganada', 'Perdida', 'Descartada')),
+       (SELECT count(*) FROM "SicoesOportunidades" o JOIN "SicoesProcesos" p ON p."Id" = o."ProcesoId"
+         WHERE o."Estado" NOT IN ('Ganada', 'Perdida', 'Descartada') AND p."FechaLimite" BETWEEN now() AND now() + interval '3 days');
+SQL
+  echo "== SICOES: oportunidades por estado"
+  docker exec -i tibolivia-prospectos-db psql -U tibolivia -d tibolivia_prospeccion -tA -F ': ' <<'SQL' 2>/dev/null
+SELECT "Estado", count(*) FROM "SicoesOportunidades" GROUP BY 1 ORDER BY 2 DESC;
+SQL
+  echo "== SICOES: avisos de 7 días (tipo canal resultado: cantidad) y últimos errores"
+  docker exec -i tibolivia-prospectos-db psql -U tibolivia -d tibolivia_prospeccion -tA <<'SQL' 2>/dev/null
+SELECT "Tipo" || ' ' || "Canal" || ' ' || CASE WHEN "Exito" THEN 'ok' ELSE 'falló' END || ': ' || count(*)
+  FROM "SicoesAvisos" WHERE "EnviadoEn" > now() - interval '7 days' GROUP BY "Tipo", "Canal", "Exito";
+SELECT to_char("EnviadoEn" - interval '4 hours', 'DD/MM HH24:MI') || ' ' || "Tipo" || ' ' || "Canal" || ': ' || left("Error", 200)
+  FROM "SicoesAvisos" WHERE NOT "Exito" ORDER BY "EnviadoEn" DESC LIMIT 5;
+SQL
+else
+  echo "== SICOES: módulo todavía no instalado en el servidor"
+fi
 echo "== Últimos avisos del sistema sobre WhatsApp/Meta (24 h)"
 docker logs --since 24h tibolivia-prospectos-app 2>&1 | grep -iE "whatsapp|meta respondi|graph" | tail -10 || true
 echo "== Últimos avisos sobre correo y campañas (24 h)"

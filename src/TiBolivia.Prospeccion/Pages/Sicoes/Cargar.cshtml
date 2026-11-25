@@ -1,0 +1,30 @@
+@page
+@model TiBolivia.Prospeccion.Pages.Sicoes.CargarModel
+@{ ViewData["Title"] = "Cargar lista SICOES"; }
+<h3>Cargar lista de convocatorias</h3>
+<p class="text-muted small">Copie la tabla de convocatorias (desde una planilla o la exportación del portal) y péguela abajo, o elija el archivo CSV.
+    La primera fila debe tener los títulos. Hacen falta al menos <b>CUCE</b>, <b>Entidad</b> y <b>Objeto</b>; también se leen
+    Modalidad, Monto (o Precio referencial), Departamento, Fecha de publicación, Fecha límite (o Fecha de presentación), Enlace y Estado.
+    Los procesos que ya estaban se actualizan y no se duplican.</p>
+
+@foreach (var a in Model.Avisos) { <div class="alert alert-warning py-2 small">@a</div> }
+@if (Model.Resultado is { } r)
+{
+    <div class="alert alert-@(r.Exito ? "success" : "danger")">
+        @r.Leidos procesos leídos · @r.Nuevos nuevos · <b>@r.Relevantes oportunidades nuevas</b>
+        @if (!r.Exito) { <div>@r.Error</div> }
+        <div><a asp-page="Index">Ver oportunidades</a></div>
+    </div>
+}
+
+<form method="post" enctype="multipart/form-data" class="card p-3">
+    <div class="mb-3">
+        <label class="form-label">Archivo CSV</label>
+        <input asp-for="Archivo" type="file" accept=".csv,.txt,.tsv" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">O pegue la tabla aquí</label>
+        <textarea asp-for="Texto" rows="12" class="form-control font-monospace small" placeholder="CUCE;Entidad;Objeto;Modalidad;Monto;Departamento;Fecha límite"></textarea>
+    </div>
+    <div><button class="btn btn-primary"><i class="bi bi-upload"></i> Cargar</button> <a asp-page="Index" class="btn btn-link">Volver</a></div>
+</form>
