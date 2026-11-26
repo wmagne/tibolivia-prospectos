@@ -226,6 +226,8 @@ if (args.Contains("--verificar-correos"))
         Console.WriteLine($"OK   {g.Count()} × {g.Key}");
     foreach (var g in resultados.Where(r => r.R.Estado == EstadoVerificacion.Invalido).GroupBy(r => r.Email.Split('@')[1].ToLowerInvariant()).OrderByDescending(g => g.Count()).Take(10))
         Console.WriteLine($"OK   inválidos en {g.Key}: {g.Count()}");
+    foreach (var g in resultados.Where(r => r.R.Estado == EstadoVerificacion.Desconocido).GroupBy(r => r.Email.Split('@')[1].ToLowerInvariant()).OrderByDescending(g => g.Count()).Take(15))
+        Console.WriteLine($"OK   sin respuesta en {g.Key}: {g.Count()}");
     return;
 }
 
