@@ -183,6 +183,8 @@ public static partial class PaqueteCampanas
                     "Guion: \"Buenos días, soy {{Comercial}} de TIBolivia. Les escribimos sobre un asistente con inteligencia artificial que atiende su sitio web las 24 horas y les pasa los interesados. ¿Quién ve el sitio web y las consultas que llegan por ahí?\" Ofrezca una demo con su propia información.")),
             ], activa: true);
 
+        await TransporteYRubrosAsync(db, titulo, destacado, firma);
+
         await WhatsAppApiAsync(db, facturacion, qr, delivery);
 
         // ---------- Novedades para quienes ya recibieron una campaña y no respondieron ----------
@@ -209,6 +211,116 @@ public static partial class PaqueteCampanas
                     <p>Respondan este correo con el producto que les interesa y les enviamos el detalle. Si no desean recibir más correos, usen el enlace de baja al pie.</p>
                     """ + firma)),
             ], activa: true);
+    }
+
+    /// <summary>
+    /// Sitio v3 (26/11/2026): sistema para flotas de transporte interdepartamental (producto nuevo) y páginas del sistema
+    /// de ventas por rubro (farmacias, ferreterías, carnicerías). Cada correo lleva a su página, donde el asistente del sitio
+    /// atiende al interesado. TIB RadioMóvil no tiene campaña: está "próximamente" y el sitio solo junta una lista de espera.
+    /// </summary>
+    private static async Task TransporteYRubrosAsync(AppDbContext db, string titulo, string destacado, string firma)
+    {
+        // ---------- Transporte interdepartamental ----------
+        var transporte = await ServicioAsync(db, "Sistema para flotas de transporte interdepartamental",
+            "Venta de pasajes con mapa de asientos en vivo (un asiento no se vende dos veces), venta por tramos, efectivo o QR confirmado, " +
+            "caja por vendedor con arqueo, comisiones, lista de pasajeros con carnet y encomiendas con guía, código de retiro y manifiesto. " +
+            "Se cotiza según sucursales; demo con las rutas del cliente.");
+        await CampanaAsync(db, "Transporte interdepartamental: pasajes y encomiendas (sitio web)",
+            "Para empresas de buses interdepartamentales y encomiendas con oficina en terminal. Correo con enlace a tibolivia.com/transporte/, " +
+            "WhatsApp (tarea), seguimiento a los 4 días y llamada a los 6.",
+            transporte,
+            [
+                new(0, await CorreoAsync(db, "Transporte web 1 · Presentación",
+                    "{{Empresa}}: ni un asiento vendido dos veces, en todas sus oficinas",
+                    titulo + "Pasajes y encomiendas de todas sus oficinas en un solo sistema</h2>" + """
+                    <p>Estimados de {{Empresa}}:</p>
+                    <p>Soy {{Comercial}}, de <b>TIBolivia</b>. Hicimos un sistema para empresas de transporte interdepartamental:</p>
+                    <ul>
+                      <li><b>Mapa de asientos en vivo</b>: un asiento no se puede vender dos veces aunque dos oficinas lo toquen a la vez.</li>
+                      <li><b>Rutas con paradas</b> y venta por tramos; boleto numerado por oficina y lista de pasajeros con carnet.</li>
+                      <li>Cobro en efectivo o con <b>QR confirmado por el banco</b>; caja por vendedor con arqueo y comisiones.</li>
+                      <li><b>Encomiendas</b> pagadas o por pagar, con guía, código de retiro, manifiesto y entrega con carnet.</li>
+                    </ul>
+                    """ + destacado + "Le mostramos una <b>demo con sus propias rutas</b>, sin costo. El precio depende de cuántas oficinas tiene.</p>"
+                    + BotonSitio("/transporte/", "Ver el sistema para flotas") + """
+                    {{BotonesContacto}}
+                    """ + firma)),
+                new(0, await TareaAsync(db, "Transporte web 2 · WhatsApp (tarea)",
+                    "Enviar WhatsApp a {{Empresa}} (sistema de pasajes y encomiendas)",
+                    "Buenos días, le saluda {{Comercial}} de TIBolivia. Tenemos un sistema para empresas de buses: mapa de asientos en vivo para que ninguna oficina venda dos veces el mismo asiento, venta por tramos, caja por vendedor y encomiendas con guía y código de retiro. Mire cómo funciona: https://tibolivia.com/transporte/ ¿Le preparo una demo con sus rutas?")),
+                new(4, await CorreoAsync(db, "Transporte web 3 · Seguimiento",
+                    "Re: {{Empresa}}: pasajes y encomiendas en un solo sistema",
+                    """
+                    <p>Estimados de {{Empresa}}:</p>
+                    <p>Retomo mi correo sobre el sistema para flotas. Si me indican cuántas oficinas y rutas manejan, les preparo una demo con sus propios datos y un precio cerrado.
+                    Si no es el momento, me lo indican y no les vuelvo a escribir.</p>
+                    """ + BotonSitio("/transporte/", "Ver cómo funciona") + """
+                    {{BotonesContacto}}
+                    """ + firma)),
+                new(2, await TareaAsync(db, "Transporte web 4 · Llamada (tarea)",
+                    "Llamar a {{Empresa}} por el sistema de pasajes y encomiendas",
+                    "Guion: \"Buenos días, soy {{Comercial}} de TIBolivia. Les escribimos sobre un sistema de venta de pasajes y encomiendas para todas sus oficinas. ¿Cómo venden hoy los pasajes y cómo controlan la caja de cada oficina?\" Ofrezca la demo con sus rutas.")),
+            ], activa: true);
+
+        // ---------- Sistema de ventas por rubro (páginas propias del sitio) ----------
+        var ventas = await ServicioAsync(db, "Sistema de ventas e inventario por rubro",
+            "Punto de venta con código de barras, inventario con kárdex, caja, compras y crédito, conectado a facturación SIAT y cobros QR. " +
+            "Páginas por rubro: farmacias (lotes y vencimientos), ferreterías (unidades de medida y crédito) y carnicerías (venta por kilo).");
+        (string Campana, string Clave, string Ruta, string Asunto, string Titulo, string[] Puntos, string WhatsApp)[] rubros =
+        [
+            ("Farmacias: lotes y vencimientos (sitio web)", "Farmacias", "/farmacias/",
+                "{{Empresa}}: sepa qué lotes vencen antes de perder la mercadería",
+                "Lotes, vencimientos y facturación en un solo sistema",
+                ["Control de <b>lotes y fechas de vencimiento</b>, con aviso de lo que vence pronto.",
+                 "Inventario con <b>kárdex</b> y alerta de stock bajo.",
+                 "Facturación en línea SIAT y <b>cobros con QR</b> confirmados por el banco."],
+                "Buenos días, le saluda {{Comercial}} de TIBolivia. Tenemos un sistema de ventas para farmacias que avisa qué lotes están por vencer, lleva el kárdex y factura en línea con el SIAT. Mire cómo funciona: https://tibolivia.com/farmacias/ ¿Le muestro una demo?"),
+            ("Ferreterías: unidades de medida y crédito (sitio web)", "Ferreterías", "/ferreterias/",
+                "{{Empresa}}: venda por metro, kilo o caja y controle el crédito",
+                "Miles de productos, cualquier unidad de medida, todo facturado",
+                ["Venta por <b>metro, kilo, unidad o caja</b>, con código de barras.",
+                 "Inventario con kárdex y <b>crédito a clientes</b> con saldo al día.",
+                 "Facturación en línea SIAT y <b>cobros con QR</b> confirmados por el banco."],
+                "Buenos días, le saluda {{Comercial}} de TIBolivia. Tenemos un sistema de ventas para ferreterías: vende por metro, kilo o caja, controla el crédito de sus clientes y factura en línea con el SIAT. Mire cómo funciona: https://tibolivia.com/ferreterias/ ¿Le muestro una demo?"),
+            ("Carnicerías: venta por kilo y compras (sitio web)", "Carnicerías", "/carnicerias/",
+                "{{Empresa}}: venta por kilo, caja y factura en un solo lugar",
+                "Cada kilo vendido, registrado y facturado",
+                ["Venta <b>por kilo o por pieza</b>, con caja por turno.",
+                 "Control de <b>compras a proveedores</b> e inventario.",
+                 "Facturación en línea SIAT, <b>cobros con QR</b> y app de pedidos."],
+                "Buenos días, le saluda {{Comercial}} de TIBolivia. Tenemos un sistema de ventas para carnicerías: venta por kilo o pieza, caja por turno, compras a proveedores y factura en línea con el SIAT. Mire cómo funciona: https://tibolivia.com/carnicerias/ ¿Le muestro una demo?"),
+        ];
+        foreach (var r in rubros)
+        {
+            var lista = string.Join("\n", r.Puntos.Select(p => $"  <li>{p}</li>"));
+            await CampanaAsync(db, r.Campana,
+                $"Para {r.Clave.ToLowerInvariant()}. Correo con enlace a tibolivia.com{r.Ruta}, WhatsApp (tarea), seguimiento a los 3 días y llamada a los 5.",
+                ventas,
+                [
+                    new(0, await CorreoAsync(db, $"{r.Clave} web 1 · Presentación", r.Asunto,
+                        titulo + r.Titulo + "</h2>" + $"""
+                        <p>Estimados de {"{{Empresa}}"}:</p>
+                        <p>Soy {"{{Comercial}}"}, de <b>TIBolivia</b>. Tenemos un sistema de ventas pensado para {r.Clave.ToLowerInvariant()}:</p>
+                        <ul>
+                        {lista}
+                        </ul>
+                        """ + destacado + "La facturación en línea arranca <b>desde Bs 79 al mes</b>. Demo y configuración sin costo.</p>"
+                        + BotonSitio(r.Ruta, "Ver el sistema") + """
+                        {{BotonesContacto}}
+                        """ + firma)),
+                    new(0, await TareaAsync(db, $"{r.Clave} web 2 · WhatsApp (tarea)", $"Enviar WhatsApp a {{{{Empresa}}}} ({r.Clave.ToLowerInvariant()})", r.WhatsApp)),
+                    new(3, await CorreoAsync(db, $"{r.Clave} web 3 · Seguimiento", "Re: " + r.Asunto,
+                        """
+                        <p>Estimados de {{Empresa}}:</p>
+                        <p>Retomo mi correo sobre el sistema de ventas. Si me cuentan qué usan hoy para vender y facturar, les digo en una llamada corta qué cambiaría.
+                        Si no es el momento, me lo indican y no les vuelvo a escribir.</p>
+                        """ + BotonSitio(r.Ruta, "Ver el sistema") + """
+                        {{BotonesContacto}}
+                        """ + firma)),
+                    new(2, await TareaAsync(db, $"{r.Clave} web 4 · Llamada (tarea)", $"Llamar a {{{{Empresa}}}} por el sistema de ventas",
+                        $"Guion: \"Buenos días, soy {{{{Comercial}}}} de TIBolivia. Les escribimos sobre un sistema de ventas para {r.Clave.ToLowerInvariant()}. ¿Qué usan hoy para vender, controlar el inventario y facturar?\" Ofrezca la demo sin costo.")),
+                ], activa: true);
+        }
     }
 
     /// <summary>

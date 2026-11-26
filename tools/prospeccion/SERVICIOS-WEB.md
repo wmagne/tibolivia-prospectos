@@ -6,7 +6,7 @@ en `src/TiBolivia.Prospeccion/Data/PaqueteCampanasWeb.cs` (correo con enlace a s
 seguimiento y llamada) y su regla en `appsettings.json` (`Campanas:OtrasAutoInscripciones`, antes de las reglas
 generales), se agrega la fila aquí y se avisa en el informe del día.
 
-Revisado por última vez: 2026-11-25 (commit e39a2d0 del sitio, sin cambios).
+Revisado por última vez: 2026-11-26 (commit a6dc792 del sitio, «sitio v3»: producto nuevo de transporte y páginas por rubro).
 
 | Producto en el sitio | Página | Campaña en el sistema | A quién se inscribe (regla) |
 | --- | --- | --- | --- |
@@ -16,4 +16,9 @@ Revisado por última vez: 2026-11-25 (commit e39a2d0 del sitio, sin cambios).
 | Apps de pedidos y delivery | / (#productos) | Apps de pedidos y delivery (sitio web) | Negocios con delivery, licorerías, courier y mensajería (60/día) |
 | Asistente con IA para su web (nuevo) | / (el chat del sitio) | Asistente con IA para su web (sitio web) | Empresas con correo y sitio web propio (40/día) |
 | Área de sistemas y correo | / (#productos) | Correo corporativo (empresas que usan Gmail o Hotmail) | Manual |
+| Sistema para flotas de transporte interdepartamental (nuevo) | /transporte/ | Transporte interdepartamental: pasajes y encomiendas (sitio web) | Nombre o notas con interdepartamental, terminal de buses, transporte de pasajeros, bus cama, flota (30/día) |
+| Sistema de ventas para farmacias (lotes y vencimientos) | /farmacias/ | Farmacias: lotes y vencimientos (sitio web) | Farmacias, boticas y droguerías con correo (30/día) |
+| Sistema de ventas para ferreterías (unidades de medida y crédito) | /ferreterias/ | Ferreterías: unidades de medida y crédito (sitio web) | Ferreterías, barracas y materiales de construcción con correo (30/día) |
+| Sistema de ventas para carnicerías (venta por kilo) | /carnicerias/ | Carnicerías: venta por kilo y compras (sitio web) | Carnicerías, embutidos y frigoríficos con correo (20/día) |
+| TIB RadioMóvil (app de taxis, próximamente) | /radiomovil/ | Sin campaña: solo lista de espera, sin fechas ni condiciones | — |
 | Todo junto («Venda, cobre y facture») | / | Novedades TIBolivia: venda, cobre y facture (recontacto) | Contactados hace más de 21 días que no respondieron (150/día) |
