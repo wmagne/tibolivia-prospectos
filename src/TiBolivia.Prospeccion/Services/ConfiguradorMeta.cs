@@ -78,9 +78,10 @@ public partial class ConfiguradorMeta(HttpClient http, IOptionsSnapshot<WhatsApp
     /// <summary>Plantilla de los avisos del módulo SICOES: aviso interno al equipo, no publicidad (categoría utilidad).</summary>
     // Primera versión "tibolivia_alerta_sicoes": Meta la pasó a marketing ("publicó una compra" sonaba a oferta).
     // Esta habla solo del aviso que el equipo pidió recibir, que es lo que Meta acepta como utilidad.
+    // Meta tampoco acepta una variable al principio o al final del texto: por eso la frase de cierre.
     public const string PlantillaAvisoSicoes = "tibolivia_aviso_sicoes";
     public const string TextoAvisoSicoes =
-        "Aviso de su suscripción a Alertas SICOES. Se registró un proceso que coincide con su perfil. Entidad: {{1}}. Objeto: {{2}}. Monto y modalidad: {{3}}. Fecha de cierre: {{4}}.";
+        "Aviso de su suscripción a Alertas SICOES. Se registró un proceso que coincide con su perfil. Entidad: {{1}}. Objeto: {{2}}. Monto y modalidad: {{3}}. Fecha de cierre: {{4}}. Recibe este aviso porque su equipo activó Alertas SICOES.";
     public static readonly string[] EjemplosAvisoSicoes =
         ["Gobierno Autónomo Municipal de Santa Cruz", "Adquisición de computadoras de escritorio", "Bs 245.000 · ANPE", "27/11 10:00"];
 

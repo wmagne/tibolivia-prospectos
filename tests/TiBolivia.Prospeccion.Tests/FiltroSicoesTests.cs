@@ -131,3 +131,14 @@ public class PlantillaAvisoSicoesTests
         Assert.Equal(4, TiBolivia.Prospeccion.Services.ConfiguradorMeta.EjemplosAvisoSicoes.Length);
     }
 }
+
+public class PlantillaAvisoSicoesFormaTests
+{
+    [Fact]
+    public void Meta_no_acepta_variables_al_principio_ni_al_final()
+    {
+        var t = TiBolivia.Prospeccion.Services.ConfiguradorMeta.TextoAvisoSicoes.Trim().TrimEnd('.', ' ');
+        Assert.False(t.StartsWith("{{"), "empieza con variable");
+        Assert.False(t.EndsWith("}}"), "termina con variable");
+    }
+}
