@@ -31,7 +31,7 @@ El CUCE evita duplicados: si un proceso ya estaba, se actualizan su estado y su 
 - **Modo pruebas** (`Sicoes:ModoPruebas`): solo salen a `CorreosPermitidos` y `WhatsAppPermitidos`, aunque un perfil diga otra cosa.
 
 Para que el WhatsApp llegue sin que el destinatario haya escrito antes, Meta exige una plantilla aprobada
-(`Sicoes:PlantillaWhatsApp` = `tibolivia_alerta_sicoes`, de utilidad, 4 variables: entidad, objeto, monto y modalidad, fecha de cierre). Se envió a revisión de Meta el 25/11/2026 con la acción `whatsapp-plantilla-sicoes` de `desplegar.yml`.
+(`Sicoes:PlantillaWhatsApp` = `tibolivia_aviso_sicoes`, de utilidad, 4 variables: entidad, objeto, monto y modalidad, fecha de cierre). La primera versión (`tibolivia_alerta_sicoes`) Meta la pasó a marketing; esta se envió el 26/11/2026 con la acción `whatsapp-plantilla-sicoes` de `desplegar.yml`.
 
 ## Tablas propias
 
