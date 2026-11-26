@@ -20,7 +20,7 @@ on:
         required: true
         default: diagnostico
         type: choice
-        options: [diagnostico, instalar, cambiar-correo, whatsapp-completar, whatsapp-plantillas, whatsapp-plantilla-sicoes]
+        options: [diagnostico, instalar, cambiar-correo, whatsapp-completar, whatsapp-plantillas, whatsapp-plantilla-sicoes, whatsapp-borrar-plantilla-sicoes-anterior]
       dominio:
         description: Dominio del sistema
         required: true
@@ -85,6 +85,13 @@ jobs:
           SSHPASS: ${{ secrets.SERVIDOR_CLAVE_SSH }}
         run: |
           sshpass -e ssh "$USUARIO@$SERVIDOR" "docker exec -e Logging__LogLevel__Default=Warning tibolivia-prospectos-app dotnet TiBolivia.Prospeccion.dll --crear-plantilla-sicoes 2>&1 | grep -E '^(OK|ERR)'"
+
+      - name: Borrar en Meta la plantilla SICOES anterior (tibolivia_alerta_sicoes)
+        if: env.ACCION == 'whatsapp-borrar-plantilla-sicoes-anterior'
+        env:
+          SSHPASS: ${{ secrets.SERVIDOR_CLAVE_SSH }}
+        run: |
+          sshpass -e ssh "$USUARIO@$SERVIDOR" "docker exec -e Logging__LogLevel__Default=Warning tibolivia-prospectos-app dotnet TiBolivia.Prospeccion.dll --borrar-plantilla-sicoes-anterior 2>&1 | grep -E '^(OK|ERR)'"
 
       - name: Cambiar el correo de un usuario
         if: env.ACCION == 'cambiar-correo'

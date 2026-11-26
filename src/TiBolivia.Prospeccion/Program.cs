@@ -178,6 +178,26 @@ if (args.Contains("--crear-plantilla-sicoes"))
     return;
 }
 
+// Borra en Meta la primera versión de la plantilla SICOES (reemplazada por tibolivia_aviso_sicoes). Solo esa.
+if (args.Contains("--borrar-plantilla-sicoes-anterior"))
+{
+    using var scope = app.Services.CreateScope();
+    var sp = scope.ServiceProvider;
+    var nombre = ConfiguradorMeta.PlantillaAvisoSicoesAnterior;
+    try
+    {
+        var existe = (await sp.GetRequiredService<DiagnosticoWhatsApp>().ListarPlantillasAsync(CancellationToken.None)).Any(t => t.Nombre == nombre);
+        if (!existe) Console.WriteLine($"OK {nombre}: no existe en Meta, nada que borrar");
+        else
+        {
+            await sp.GetRequiredService<ConfiguradorMeta>().BorrarPlantillaSicoesAnteriorAsync(CancellationToken.None);
+            Console.WriteLine($"OK {nombre}: borrada en Meta");
+        }
+    }
+    catch (Exception ex) { Console.WriteLine($"ERR {nombre}: {ex.Message}"); }
+    return;
+}
+
 if (args.Contains("--plantillas-meta"))
 {
     using var scope = app.Services.CreateScope();

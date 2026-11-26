@@ -98,6 +98,23 @@ public partial class ConfiguradorMeta(HttpClient http, IOptionsSnapshot<WhatsApp
             components = new[] { new { type = "BODY", text = texto, example = new { body_text = new[] { ejemplos.ToArray() } } } },
         }, ct);
 
+    /// <summary>Primera versión de la plantilla SICOES, que Meta pasó a marketing. Es la única que este sistema borra.</summary>
+    public const string PlantillaAvisoSicoesAnterior = "tibolivia_alerta_sicoes";
+
+    /// <summary>
+    /// Borra en Meta la plantilla anterior de los avisos SICOES. El nombre es fijo a propósito: borrar una plantilla
+    /// aprobada que una campaña todavía usa haría fallar todos sus envíos, así que no se acepta un nombre cualquiera.
+    /// </summary>
+    public async Task BorrarPlantillaSicoesAnteriorAsync(CancellationToken ct)
+    {
+        var url = O.Url($"{O.BusinessAccountId}/message_templates") + "?name=" + Uri.EscapeDataString(PlantillaAvisoSicoesAnterior);
+        using var req = new HttpRequestMessage(HttpMethod.Delete, url);
+        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", O.AccessToken);
+        using var resp = await http.SendAsync(req, ct);
+        if (!resp.IsSuccessStatusCode)
+            throw new InvalidOperationException(DiagnosticoWhatsApp.ErrorLegible(await resp.Content.ReadAsStringAsync(ct), (int)resp.StatusCode));
+    }
+
     /// <summary>Suscribe la app a la cuenta de WhatsApp: sin esto Meta no envía los mensajes entrantes al webhook.</summary>
     public Task SuscribirAppAsync(CancellationToken ct) => PostAsync(O.Url($"{O.BusinessAccountId}/subscribed_apps"), null, ct);
 
