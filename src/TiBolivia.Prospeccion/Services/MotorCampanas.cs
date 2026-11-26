@@ -15,6 +15,7 @@ public class MotorCampanas(
     IOptions<CampanasOptions> campanasOpciones,
     IOptionsSnapshot<WhatsAppOptions> whatsAppOpciones,
     IOptions<SmtpOptions> smtpOpciones,
+    IVerificadorCorreo verificador,
     TimeProvider tiempo,
     ILogger<MotorCampanas> log)
 {
@@ -139,6 +140,17 @@ public class MotorCampanas(
 
         if (!p.PuedeRecibirEmail)
             return Omitir(mensaje, p.BajaEmail ? "El prospecto se dio de baja de correos" : "Sin correo electrónico");
+
+        // Un correo que rebota le resta reputación a todo tibolivia.com: se comprueba antes de enviar.
+        var verificacion = await verificador.VerificarAsync(p.Email!, ct);
+        if (verificacion.Estado == EstadoVerificacion.Invalido)
+        {
+            // Igual que un rebote: no se le vuelve a escribir a esa dirección; si tiene teléfono, pasa a las campañas de celular o fijo.
+            p.BajaEmail = true;
+            db.Interacciones.Add(new Interaccion { ProspectoId = p.Id, Tipo = TipoInteraccion.Sistema,
+                Detalle = $"Correo {p.Email} descartado antes de enviar: {verificacion.Motivo}" });
+            return Omitir(mensaje, "Correo no existe: " + verificacion.Motivo);
+        }
 
         var r = await email.EnviarAsync(
             new CorreoSaliente(p.Email!, p.NombreContacto, asunto, cuerpo, renderizador.LinkBaja(p),

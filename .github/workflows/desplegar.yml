@@ -20,7 +20,7 @@ on:
         required: true
         default: diagnostico
         type: choice
-        options: [diagnostico, instalar, cambiar-correo, whatsapp-completar, whatsapp-plantillas, whatsapp-plantilla-sicoes, whatsapp-borrar-plantilla-sicoes-anterior]
+        options: [diagnostico, instalar, cambiar-correo, whatsapp-completar, whatsapp-plantillas, whatsapp-plantilla-sicoes, whatsapp-borrar-plantilla-sicoes-anterior, verificar-correos]
       dominio:
         description: Dominio del sistema
         required: true
@@ -92,6 +92,13 @@ jobs:
           SSHPASS: ${{ secrets.SERVIDOR_CLAVE_SSH }}
         run: |
           sshpass -e ssh "$USUARIO@$SERVIDOR" "docker exec -e Logging__LogLevel__Default=Warning tibolivia-prospectos-app dotnet TiBolivia.Prospeccion.dll --borrar-plantilla-sicoes-anterior 2>&1 | grep -E '^(OK|ERR)'"
+
+      - name: Probar la comprobación de correos con una muestra (solo lectura)
+        if: env.ACCION == 'verificar-correos'
+        env:
+          SSHPASS: ${{ secrets.SERVIDOR_CLAVE_SSH }}
+        run: |
+          sshpass -e ssh "$USUARIO@$SERVIDOR" "docker exec -e Logging__LogLevel__Default=Warning tibolivia-prospectos-app dotnet TiBolivia.Prospeccion.dll --verificar-correos 150 2>&1 | grep -E '^(OK|ERR)'"
 
       - name: Cambiar el correo de un usuario
         if: env.ACCION == 'cambiar-correo'

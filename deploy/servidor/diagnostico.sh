@@ -56,6 +56,12 @@ SQL
   docker exec -i tibolivia-prospectos-db psql -U tibolivia -d tibolivia_prospeccion -tA <<'SQL' 2>/dev/null
 SELECT "Direccion" || ' ' || "Estado" || ': ' || count(*) FROM "Mensajes" WHERE "Canal" = 'Email' GROUP BY "Direccion", "Estado";
 SQL
+  echo "== Correos descartados antes de enviar por no existir (7 días: cantidad | motivo)"
+  docker exec -i tibolivia-prospectos-db psql -U tibolivia -d tibolivia_prospeccion -tA -F ' | ' <<'SQL' 2>/dev/null
+SELECT count(*), left(replace("Error", 'Correo no existe: ', ''), 120) FROM "Mensajes"
+ WHERE "Canal" = 'Email' AND "Estado" = 'Omitido' AND "Error" LIKE 'Correo no existe%' AND "CreadoEn" > now() - interval '7 days'
+ GROUP BY 2 ORDER BY 1 DESC LIMIT 8;
+SQL
   echo "== Respuestas de prospectos (hora Bolivia | empresa | asunto)"
   docker exec -i tibolivia-prospectos-db psql -U tibolivia -d tibolivia_prospeccion -tA -F ' | ' <<'SQL' 2>/dev/null
 SELECT to_char(m."CreadoEn" - interval '4 hours', 'DD/MM HH24:MI'), p."Empresa", coalesce(m."Asunto", '-')

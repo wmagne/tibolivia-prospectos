@@ -64,6 +64,10 @@ builder.Services.AddScoped<IEnviadorWhatsApp, EnviadorWhatsAppSegunProveedor>();
 builder.Services.AddHttpClient<IClienteChatbot, ClienteChatbotHttp>();
 builder.Services.AddHttpClient<DiagnosticoWhatsApp>();
 builder.Services.AddHttpClient<ConfiguradorMeta>();
+builder.Services.Configure<VerificacionCorreoOptions>(builder.Configuration.GetSection("VerificacionCorreo"));
+builder.Services.AddSingleton<IConsultaDns, ConsultaDns>();
+builder.Services.AddSingleton<ISondaSmtp, SondaSmtp>();
+builder.Services.AddSingleton<IVerificadorCorreo, VerificadorCorreo>();
 builder.Services.AddScoped<MotorCampanas>();
 builder.Services.AddScoped<ServicioInscripciones>();
 builder.Services.AddScoped<InscripcionAutomatica>();
@@ -195,6 +199,33 @@ if (args.Contains("--borrar-plantilla-sicoes-anterior"))
         }
     }
     catch (Exception ex) { Console.WriteLine($"ERR {nombre}: {ex.Message}"); }
+    return;
+}
+
+// Prueba de solo lectura de la comprobación de correos: verifica una muestra de la base y no marca nada.
+// dotnet TiBolivia.Prospeccion.dll --verificar-correos 200
+if (args.Contains("--verificar-correos"))
+{
+    using var scope = app.Services.CreateScope();
+    var sp = scope.ServiceProvider;
+    var cantidad = int.TryParse(args.SkipWhile(a => a != "--verificar-correos").Skip(1).FirstOrDefault(), out var n) ? Math.Clamp(n, 1, 500) : 100;
+    var db = sp.GetRequiredService<AppDbContext>();
+    var correos = await db.Prospectos
+        .Where(p => p.Email != null && p.Email != "" && !p.BajaEmail && (p.Estado == EstadoProspecto.Nuevo || p.Estado == EstadoProspecto.Contactado))
+        .OrderBy(p => EF.Functions.Random()).Select(p => p.Email!).Take(cantidad).ToListAsync();
+    // La prueba se hace aunque la comprobación esté apagada para las campañas: así se puede mirar antes de activarla.
+    var o = sp.GetRequiredService<IOptions<VerificacionCorreoOptions>>().Value;
+    var verificador = new VerificadorCorreo(sp.GetRequiredService<IConsultaDns>(), sp.GetRequiredService<ISondaSmtp>(),
+        Options.Create(new VerificacionCorreoOptions { Habilitada = true, ProbarBuzon = o.ProbarBuzon, NombreHelo = o.NombreHelo, TimeoutSegundos = o.TimeoutSegundos }),
+        TimeProvider.System, sp.GetRequiredService<ILogger<VerificadorCorreo>>());
+    var resultados = new List<(string Email, ResultadoVerificacion R)>();
+    foreach (var e in correos) resultados.Add((e, await verificador.VerificarAsync(e, CancellationToken.None)));
+    Console.WriteLine($"OK muestra de {resultados.Count} correos (solo lectura, no se marcó nada)");
+    foreach (var g in resultados.GroupBy(r => r.R.Estado)) Console.WriteLine($"OK {g.Key}: {g.Count()}");
+    foreach (var g in resultados.Where(r => r.R.Estado != EstadoVerificacion.Valido).GroupBy(r => r.R.Motivo.Split(" dice ")[0].Split(" no existe")[0]).OrderByDescending(g => g.Count()).Take(12))
+        Console.WriteLine($"OK   {g.Count()} × {g.Key}");
+    foreach (var g in resultados.Where(r => r.R.Estado == EstadoVerificacion.Invalido).GroupBy(r => r.Email.Split('@')[1].ToLowerInvariant()).OrderByDescending(g => g.Count()).Take(10))
+        Console.WriteLine($"OK   inválidos en {g.Key}: {g.Count()}");
     return;
 }
 
