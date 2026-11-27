@@ -6,7 +6,7 @@ en `src/TiBolivia.Prospeccion/Data/PaqueteCampanasWeb.cs` (correo con enlace a s
 seguimiento y llamada) y su regla en `appsettings.json` (`Campanas:OtrasAutoInscripciones`, antes de las reglas
 generales), se agrega la fila aquí y se avisa en el informe del día.
 
-Revisado por última vez: 2026-11-26 (commit a6dc792 del sitio, «sitio v3»: producto nuevo de transporte y páginas por rubro).
+Revisado por última vez: 2026-11-27 (commit a6dc792 del sitio, sin cambios desde el sitio v3).
 
 | Producto en el sitio | Página | Campaña en el sistema | A quién se inscribe (regla) |
 | --- | --- | --- | --- |
