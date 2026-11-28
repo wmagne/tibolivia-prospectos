@@ -30,6 +30,9 @@ Trabaje en una carpeta temporal (TMP) fuera del repositorio para los CSV interme
    Si salieron 0 filas, no publicar; solo avanzar estado.txt.
 6. Copiar a `src/TiBolivia.Prospeccion/Data/Listas/web-diaria-AAAA-MM-DD.csv` (el sistema la carga sola al reiniciar, una sola vez).
 7. Guardar en estado.txt el nuevo índice (N+8, circular). `dotnet build -c Release` debe compilar.
+7b. Segmento agotado: si un segmento dio menos de 15 empresas nuevas, se comenta en segmentos.txt con
+   `# agotado AAAA-MM-DD (última pasada: N nuevas; …):` delante (no se borra, por si se habilitan fuentes nuevas)
+   y se recalcula estado.txt para que apunte al mismo segmento siguiente en la lista sin los comentados.
 8. Commit ("Búsqueda diaria de prospectos AAAA-MM-DD: N empresas") con los trailers de atribución de la sesión,
    push a la rama de trabajo y a main.
 9. Publicar: el push a main de un archivo en Data/Listas lanza solo el workflow `desplegar.yml` (instalar).
