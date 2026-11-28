@@ -1,7 +1,7 @@
 # Un segmento por línea. La búsqueda diaria toma los 6 siguientes (ver estado.txt) y vuelve a empezar al terminar.
 Santa Cruz — negocios con DELIVERY propio: restaurantes, pizzerías, hamburgueserías, pollerías, comida rápida (WhatsApp de pedidos publicado)
 Santa Cruz — DELIVERY de farmacias, licorerías, minimarkets, panaderías, heladerías, florerías y regalos (WhatsApp de pedidos)
-Santa Cruz — empresas de DELIVERY y mensajería: motoboys, courier urbano, mandados, delivery de encomiendas
+# agotado 2026-11-28 (última pasada: 2 nuevas; los directorios abiertos ya no traen más): Santa Cruz — empresas de DELIVERY y mensajería: motoboys, courier urbano, mandados, delivery de encomiendas
 La Paz y El Alto — negocios con DELIVERY: restaurantes, comida rápida, pastelerías, farmacias, licorerías (WhatsApp de pedidos)
 Cochabamba — negocios con DELIVERY: restaurantes, pollerías, pizzerías, farmacias, licorerías, minimarkets (WhatsApp de pedidos)
 Tarija, Sucre, Oruro, Potosí, Trinidad — negocios con DELIVERY y empresas de mensajería (WhatsApp de pedidos)
@@ -62,6 +62,6 @@ Santa Cruz — ferreterías, farmacias, casas de repuestos y distribuidoras mayo
 Santa Cruz — estudios contables y jurídicos societarios, y sociedades comerciales SRL y S.A. medianas (contacto publicado)
 Santa Cruz de la Sierra, Montero, Warnes — proveedores de internet locales, cableoperadoras y cooperativas de telecomunicaciones (contacto publicado)
 # agotado 2026-11-28 (última pasada: 7 nuevas; los directorios abiertos ya no traen más): Santa Cruz de la Sierra, El Alto, Cochabamba — talleres de conversión a gas natural vehicular (GNV) y cooperativas de micros del programa PATRIA (contacto publicado)
-Santa Cruz de la Sierra — clínicas privadas, laboratorios clínicos y centros de imagen y diagnóstico (contacto publicado)
+# agotado 2026-11-28 (última pasada: 13 nuevas; los directorios abiertos ya no traen más): Santa Cruz de la Sierra — clínicas privadas, laboratorios clínicos y centros de imagen y diagnóstico (contacto publicado)
 Santa Cruz de la Sierra — restaurantes, pensiones, panaderías, heladerías, catering y distribuidoras de bebidas que necesitan la autorización sanitaria del SEDES y el carnet sanitario de su personal (contacto publicado)
 Santa Cruz de la Sierra — pymes proveedoras del Estado con RUPE (constructoras chicas, distribuidoras de material de oficina, limpieza e insumos médicos, imprentas, catering, seguridad y consultoras) (contacto publicado)
